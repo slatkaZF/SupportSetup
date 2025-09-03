@@ -1,0 +1,33 @@
+dows PowerShell
+yright (C) 2016 Microsoft Corporation. Alle Rechte vorbehalten.
+
+C:\windows\system32> cd C:\SupportSetup
+C:\SupportSetup> dir
+
+
+ Verzeichnis: C:\SupportSetup
+
+
+e                LastWriteTime         Length Name
+-                -------------         ------ ----
+---       03.09.2025     11:22                $PSScriptRoot
+---       03.09.2025     11:22                Logs
+---       03.09.2025     08:56           1724 config.json
+---       03.09.2025     10:56           7526 SupportSetup.ps1
+
+
+C:\SupportSetup> Unblock-File -Path "C:\SupportSetup\SupportSetup.ps1"
+
+C:\SupportSetup> .\SupportSetup -config .\config.json
+C:\SupportSetup\SupportSetup.ps1:73 Zeichen:109
+.. g) {    Stop-Transcript | Out-Null}Write-Info "Skript abgeschlossen."
+                                                                       ~
+ Zeichenfolge hat kein Abschlusszeichen: ".
+C:\SupportSetup\SupportSetup.ps1:7 Zeichen:562
+.. ."        exit 1    }} elseif ($currentPolicy -eq "Bypass") {    Writ ...
+                                                               ~
+ schließende "}" fehlt im Anweisungsblock oder der Typdefinition.
+ + CategoryInfo          : ParserError: (:) [], ParseException
+ + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
+
+C:\SupportSetup>
