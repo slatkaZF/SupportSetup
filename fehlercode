@@ -1,101 +1,26 @@
-# Clear-Host # Konsole leeren für sauberen Start
-# ===================== Pfad zur Konfigurationsdatei =====================
-$ConfigPath = Join-Path $PSScriptRoot "config.json"
-# ===================== Einfache Logging-Funktionen =====================
-function Write-Info { Write-Host "[INFO] $args" }
-function Write-Warn { Write-Host "[WARN] $args" -ForegroundColor Yellow }
-function Write-Err { Write-Host "[ERROR] $args" -ForegroundColor Red }
-# ===================== Adminrechte prüfen =====================
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-    Write-Err "Bitte führen Sie dieses Skript mit administrativen Rechten aus."
-    exit 1
-}
-# ===================== Konfiguration laden =====================
-if (-not (Test-Path $ConfigPath)) {
-    Write-Err "Konfigurationsdatei nicht gefunden: $ConfigPath"
-    exit 1
-}
-$cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$root = $cfg.root
-Write-Info "Root-Verzeichnis: $root"
-# ===================== Transcript-Logging (falls aktiviert) =====================
-if ($cfg.features.enableTranscriptLogging) {
-    $logDir = [Environment]::ExpandEnvironmentVariables($cfg.logging.directory)
-    if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
-    $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
-    $transcriptPath = Join-Path $logDir $logFile
-    Start-Transcript -Path $transcriptPath -Force | Out-Null
-    Write-Info "Transcript gestartet: $transcriptPath"
-}
-# ===================== Ordner erstellen =====================
-if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories) {
-    Write-Info "Erstelle Projektordner..."
-    foreach ($dir in $cfg.folderProvisioning.projectDirectories) {
-        $path = $dir.Replace("{root}", $root)
-        $path = [Environment]::ExpandEnvironmentVariables($path)
-        if (-not (Test-Path $path)) {
-            New-Item -ItemType Directory -Path $path -Force | Out-Null
-            Write-Info "Verzeichnis erstellt: $path"
-        }
-    }
-    Write-Info "Alle Ordner erstellt."
-}
-# ===================== Sicherheitsrichtlinien setzen =====================
-if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
-    if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
-        try {
-            Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
-            Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
-        } catch {
-            Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
-        }
-    }
-}
-# ===================== Lokales Supportkonto anlegen =====================
-# Variables for the registry change
-$registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
-$registryName = "LocalAccountTokenFilterPolicy"
-$registryValue = 1
-# Params for the new user
-$password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
-$params = @{
-    Name = 'Support'
-    Password = $password
-    Description = 'Support User for administration'
-}
-# Add new local "Support" user
-New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
-# Add the "Support" user to the "Administrators" group
-Add-LocalGroupMember -Group "Administratoren" -Member "Support"
-# ===================== Dateien kopieren =====================
-if ($cfg.jobs) {
-    foreach ($job in $cfg.jobs) {
-        try {
-            $source = $job.Source.Replace("{root}", $root)
-            $source = [Environment]::ExpandEnvironmentVariables($source)
-            $destination = $job.Target.Replace("{root}", $root)
-            $destination = [Environment]::ExpandEnvironmentVariables($destination)
-            $logFile = $job.LogFile.Replace("{timestamp}", (Get-Date -Format "yyyyMMdd_HHmmss"))
-            $logFile = [Environment]::ExpandEnvironmentVariables($logFile)
-            if (-not (Test-Path $destination)) {
-                New-Item -ItemType Directory -Path $destination -Force | Out-Null
-            }
-            Write-Info "Kopiere $($job.FilePattern) von $source nach $destination"
-            Copy-Item -Path $source -Destination $destination -Force
-            Write-Info "Erfolg: $($job.FilePattern) kopiert."
-            if ($logFile) {
-                Add-Content -Path $logFile -Value "$(Get-Date) ERFOLG: $source nach $destination kopiert"
-            }
-        } catch {
-            Write-Err "Fehler beim Kopieren von $($job.FilePattern): $_"
-            if ($logFile) {
-                Add-Content -Path $logFile -Value "$(Get-Date) FEHLER: $_"
-            }
-        }
-    }
-}
-# ===================== Cleanup =====================
-if ($cfg.features.enableTranscriptLogging) {
-    Stop-Transcript | Out-Null
-}
-Write-Info "Skript abgeschlossen."
+Windows PowerShell
+Copyright (C) 2016 Microsoft Corporation. Alle Rechte vorbehalten.
+
+PS C:\windows\system32> cd C:\SupportSetup
+PS C:\SupportSetup> .\SupportSetup -config .\config.json
+[INFO] Root-Verzeichnis: C:\
+[INFO] Transcript gestartet: $PSScriptRoot\SupportSetup_20250903_140207.log
+[INFO] Erstelle Projektordner...
+[INFO] Alle Ordner erstellt.
+
+[INFO] Kopiere ChromeStandaloneSetup64_26032025.exe von \\emea.zf-world.com\sCW\INDUST~1\OG-EAN~3\4000-Versuch\02_IPC_Ma
+in_Share\01_Tools_Drivers\Chrome\ChromeStandaloneSetup64_26032025.exe nach C:\02_Tools\
+[INFO] Erfolg: ChromeStandaloneSetup64_26032025.exe kopiert.
+[INFO] Kopiere INCA_v7.5 von \\emea.zf-world.com\sCW\IndustrialNet\OG-EAntriebe-ENTW\4000-Versuch\02_IPC_Main_Share\01_T
+ools_Drivers\Etas\Inca\INCA_v7.5 nach C:\02_Tools\
+[INFO] Erfolg: INCA_v7.5 kopiert.
+[INFO] Skript abgeschlossen.
+Name    Enabled Description
+----    ------- -----------
+Support True    Support User for administration
+
+
+PS C:\SupportSetup>
+
+
+
