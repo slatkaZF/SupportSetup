@@ -38,7 +38,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Write-Err "Bitte führen Sie dieses Skript mit administrativen Rechten aus."    
     exit 1
 }
-# Erklärung: Hier überprüfen wir, ob das Skript mit Admin-Rechten läuft. Das ist wie ein Türsteher: Wir schauen, ob der aktuelle Benutzer Administrator ist. Wenn nicht (-not bedeutet "nicht"), zeigen wir einen Fehler und beenden es. Das verhindert, dass es ohne die nötigen Rechte läuft und scheitert.
+# Erklärung: Hier überprüfen wir, ob das Skript mit Admin-Rechten läuft. Das ist wie ein Türsteher: Wir schauen, ob der aktuelle Benutzer Administrator ist. Wenn nicht (-not bedeutet "nicht"), zeigen wir einen Fehler und beenden das Skript. Das verhindert, dass es ohne die nötigen Rechte läuft und scheitert.
 
 # ===================== Konfiguration laden =====================
 $ConfigPath = Join-Path $PSScriptRoot $config
@@ -54,10 +54,10 @@ $cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 # Erklärung: Laden der Config-Datei: Lies den Inhalt als Text (-Raw bedeutet alles auf einmal), mit UTF8-Encoding (für Umlaute), und konvertiere es zu einem JSON-Objekt. Speichere es in $cfg, das ist wie ein Wörterbuch mit allen Einstellungen.
 
 $root = $cfg.root -replace "\\", ""  # Korrigiert doppelte Backslashes
-# Erklärung: Hole den Root-Wert aus der Config (z. B. "C:\\") und entferne doppelte Backslashes. Achtung: Dein Code hat hier einen Bug – es sollte -replace "\\\\", "\\" sein, um nur doppelte zu korrigieren, nicht alle zu entfernen!
+# Erklärung: Hole den "root"-Wert aus der Config (z. B. "C:\\") und entferne doppelte Backslashes. Achtung: Dein Code hat hier einen Bug – es sollte -replace "\\\\", "\\" sein, um nur doppelte zu korrigieren, nicht alle zu entfernen!
 
 Write-Info "Root-Verzeichnis: $root"
-# Erklärung: Zeige den Root an.
+# Erklärung: Zeige den Root-Pfad an.
 
 # ===================== Transcript-Logging (falls aktiviert) =====================
 if ($cfg.features.enableTranscriptLogging) {    
@@ -139,7 +139,7 @@ if ($cfg.features.createSupportUser -and $cfg.localSupportAccount.username -and 
         }
     }
 }
-# Erklärung: Wenn Benutzererstellung aktiviert ist, konvertiere das Passwort zu einem sicheren Format. Erstelle einen Hash mit Parametern (wie ein Einkaufszettel). Prüfe, ob der Benutzer existiert; wenn nicht, erstelle ihn und zeige es an. Hole den den Namen der Admin-Gruppe (sprachunabhängig). Füge den Benutzer zur Gruppe hinzu, oder zeige, wenn er bereits drin ist. "try-catch" fängt Fehler ab.
+# Erklärung: Wenn Benutzererstellung aktiviert ist, konvertiere das Passwort zu einem sicheren Format. Erstelle einen Hash mit Parametern (wie ein Einkaufszettel). Prüfe, ob der Benutzer existiert; wenn nicht, erstelle ihn und zeige es an. Hole den Namen der Admin-Gruppe (sprachunabhängig). Füge den Benutzer zur Gruppe hinzu, oder zeige, wenn er bereits drin ist. "try-catch" fängt Fehler ab.
 
 # ===================== Dateien kopieren =====================
 if ($cfg.jobs) {    
