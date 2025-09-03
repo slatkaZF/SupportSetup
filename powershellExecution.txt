@@ -1,0 +1,5 @@
+cd C:\SupportSetup dir
+
+Unblock-File -Path "C:\SupportSetup\SupportSetup.ps1"
+
+.\SupportSetup.ps1 -config .\config.json
