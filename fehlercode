@@ -1,33 +1,52 @@
-dows PowerShell
-yright (C) 2016 Microsoft Corporation. Alle Rechte vorbehalten.
+Windows PowerShell
+Copyright (C) 2016 Microsoft Corporation. Alle Rechte vorbehalten.
 
-C:\windows\system32> cd C:\SupportSetup
-C:\SupportSetup> dir
+PS C:\windows\system32> cd C:\SupportSetup
+PS C:\SupportSetup> Unblock-File -Path "C:\SupportSetup\SupportSetup.ps1"
+>>
+PS C:\SupportSetup> .\SupportSetup -config .\config.json
+In C:\SupportSetup\SupportSetup.ps1:34 Zeichen:412
++ ... en wir einen Fehler und beenden das Skript ("exit 1" bedeutet "mit Fe ...
++                                                          ~~~~~~~~
+Unerwartetes Token "bedeutet" in Ausdruck oder Anweisung.
+In C:\SupportSetup\SupportSetup.ps1:34 Zeichen:411
++ ... cht, zeigen wir einen Fehler und beenden das Skript ("exit 1" bedeute ...
++                                                                  ~
+Schließende ")" fehlt in einem Ausdruck.
+In C:\SupportSetup\SupportSetup.ps1:31 Zeichen:40
++ } elseif ($currentPolicy -eq "Bypass") {
++                                        ~
+Die schließende "}" fehlt im Anweisungsblock oder der Typdefinition.
+In C:\SupportSetup\SupportSetup.ps1:34 Zeichen:441
++ ... d beenden das Skript ("exit 1" bedeutet "mit Fehler beenden"). Wenn d ...
++                                                                 ~
+Unerwartetes Token ")" in Ausdruck oder Anweisung.
+In C:\SupportSetup\SupportSetup.ps1:66 Zeichen:46
++     $logFile = ($cfg.logging.fileNamePattern ?? "SupportSetup_{timest ...
++                                              ~~
+Unerwartetes Token "??" in Ausdruck oder Anweisung.
+In C:\SupportSetup\SupportSetup.ps1:66 Zeichen:45
++     $logFile = ($cfg.logging.fileNamePattern ?? "SupportSetup_{timest ...
++                                             ~
+Schließende ")" fehlt in einem Ausdruck.
+In C:\SupportSetup\SupportSetup.ps1:63 Zeichen:44
++ if ($cfg.features.enableTranscriptLogging) {
++                                            ~
+Die schließende "}" fehlt im Anweisungsblock oder der Typdefinition.
+In C:\SupportSetup\SupportSetup.ps1:66 Zeichen:79
++ ... fg.logging.fileNamePattern ?? "SupportSetup_{timestamp}.log") -replac ...
++                                                                 ~
+Unerwartetes Token ")" in Ausdruck oder Anweisung.
+In C:\SupportSetup\SupportSetup.ps1:70 Zeichen:1
++ }
++ ~
+Unerwartetes Token "}" in Ausdruck oder Anweisung.
+In C:\SupportSetup\SupportSetup.ps1:152 Zeichen:42
++             $logFileName = ($job.LogFile ?? "log_$($job.FilePattern)_ ...
++                                          ~~
+Unerwartetes Token "??" in Ausdruck oder Anweisung.
+Es wurden nicht alle Analysefehler berichtet. Korrigieren Sie die berichteten Fehler, und versuchen Sie es erneu
+    + CategoryInfo          : ParserError: (:) [], ParseException
+    + FullyQualifiedErrorId : UnexpectedToken
 
-
- Verzeichnis: C:\SupportSetup
-
-
-e                LastWriteTime         Length Name
--                -------------         ------ ----
----       03.09.2025     11:22                $PSScriptRoot
----       03.09.2025     11:22                Logs
----       03.09.2025     08:56           1724 config.json
----       03.09.2025     10:56           7526 SupportSetup.ps1
-
-
-C:\SupportSetup> Unblock-File -Path "C:\SupportSetup\SupportSetup.ps1"
-
-C:\SupportSetup> .\SupportSetup -config .\config.json
-C:\SupportSetup\SupportSetup.ps1:73 Zeichen:109
-.. g) {    Stop-Transcript | Out-Null}Write-Info "Skript abgeschlossen."
-                                                                       ~
- Zeichenfolge hat kein Abschlusszeichen: ".
-C:\SupportSetup\SupportSetup.ps1:7 Zeichen:562
-.. ."        exit 1    }} elseif ($currentPolicy -eq "Bypass") {    Writ ...
-                                                               ~
- schließende "}" fehlt im Anweisungsblock oder der Typdefinition.
- + CategoryInfo          : ParserError: (:) [], ParseException
- + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
-
-C:\SupportSetup>
+PS C:\SupportSetup>
