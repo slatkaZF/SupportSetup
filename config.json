@@ -35,7 +35,14 @@
     "directory": "$PSScriptRoot",
     "fileNamePattern": "SupportSetup_{timestamp}.log"
   },
+
   "jobs": [
+     {
+      "Source": "\\\\emea.zf-world.com\\sCW\\INDUST~1\\OG-EAN~3\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Chrome\\ChromeStandaloneSetup64_26032025.exe",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "ChromeStandaloneSetup64_26032025.exe",
+      "LogFile": "$PSScriptRoot\\log_chrome_{timestamp}.txt"
+    },
     {
       "Source": "\\\\emea.zf-world.com\\sCW\\INDUST~1\\OG-EAN~3\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Chrome\\ChromeStandaloneSetup64_26032025.exe",
       "Target": "C:\\02_Tools\\",
@@ -47,6 +54,48 @@
       "Target": "C:\\02_Tools\\",
       "FilePattern": "INCA_v7.5",
       "LogFile": "$PSScriptRoot\\log_inca_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Vector\\CANoe\\CANoe_18\\CANoe_V18.zip",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "CANoe_V18.zip",
+      "LogFile": "$PSScriptRoot\\log_CANoe_V18_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Vector\\CANape\\CANape_23\\CANapeTBE23.0.11.139(c4466af4)SP1HF1.zip",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "CANapeTBE23.0.11.139(c4466af4)SP1HF1.zip",
+      "LogFile": "$PSScriptRoot\\log_CANapeTBE23_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Vector\\CANalyzer\\CANalyzerFamily_18_SP4.zip",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "CANalyzerFamily_18_SP4.zip",
+      "LogFile": "$PSScriptRoot\\log_CANalyzerFamily_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\BeyondCompare\\BCompare-de-4.3.7.25118.exe",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "BCompare-de-4.3.7.25118.exe",
+      "LogFile": "$PSScriptRoot\\log_BCompare-de_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\BeyondCompare\\Key_Version4.pdf",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "Key_Version4.pdf",
+      "LogFile": "$PSScriptRoot\\log_Key_Version_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Imc\\Famos\\imc_FAMOS_2023_R2.7z",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "imc_FAMOS_2023_R2.7z",
+      "LogFile": "$PSScriptRoot\\log_imc_FAMOS_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Imc\\Studio\\Installer_imc_STUDIO_2023_R6_2024-03-06_AddOn_2024_03_26.exe",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "Installer_imc_STUDIO_2023_R6_2024-03-06_AddOn_2024_03_26.exe",
+      "LogFile": "$PSScriptRoot\\log_installer_imc_{timestamp}.txt"
     }
   ]
 }
