@@ -41,16 +41,16 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
     Write-Info "Alle Ordner erstellt."
 }
 # ===================== Sicherheitsrichtlinien setzen =====================
-if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
-    if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
-        try {
-            Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
-            Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
-        } catch {
-            Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
-        }
-    }
-}
+#if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
+    #if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
+        #try {
+           # Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
+            #Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
+       # } catch {
+          #  Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
+       # }
+   # }
+#}
 # ===================== Lokales Supportkonto anlegen =====================
 # Variables for the registry change
 $registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
@@ -67,7 +67,6 @@ $params = @{
 New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
 # Add the "Support" user to the "Administrators" group
 Add-LocalGroupMember -Group "Administratoren" -Member "Support"
-# ===================== Dateien kopieren =====================
 # ===================== Dateien kopieren und entsperren =====================
 if ($cfg.jobs) {
     foreach ($job in $cfg.jobs) {
