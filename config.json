@@ -4,7 +4,6 @@
   "features": {
     "createFolders": true,
     "createSupportUser": true,
-    "setSecurityPolicies": false,
     "enableTranscriptLogging": true
   },
   "folderProvisioning": {
