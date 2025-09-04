@@ -1,101 +1,100 @@
-# Clear-Host # Konsole leeren für sauberen Start
-# ===================== Pfad zur Konfigurationsdatei =====================
-$ConfigPath = Join-Path $PSScriptRoot "config.json"
-# ===================== Einfache Logging-Funktionen =====================
-function Write-Info { Write-Host "[INFO] $args" }
-function Write-Warn { Write-Host "[WARN] $args" -ForegroundColor Yellow }
-function Write-Err { Write-Host "[ERROR] $args" -ForegroundColor Red }
-# ===================== Adminrechte prüfen =====================
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-    Write-Err "Bitte führen Sie dieses Skript mit administrativen Rechten aus."
-    exit 1
-}
-# ===================== Konfiguration laden =====================
-if (-not (Test-Path $ConfigPath)) {
-    Write-Err "Konfigurationsdatei nicht gefunden: $ConfigPath"
-    exit 1
-}
-$cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$root = $cfg.root
-Write-Info "Root-Verzeichnis: $root"
-# ===================== Transcript-Logging (falls aktiviert) =====================
-if ($cfg.features.enableTranscriptLogging) {
-    $logDir = [Environment]::ExpandEnvironmentVariables($cfg.logging.directory)
-    #if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
-    $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
-    $transcriptPath = Join-Path $logDir $logFile
-    Start-Transcript -Path $transcriptPath -Force | Out-Null
-    Write-Info "Transcript gestartet: $transcriptPath"
-}
-# ===================== Ordner erstellen =====================
-if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories) {
-    Write-Info "Erstelle Projektordner..."
-    foreach ($dir in $cfg.folderProvisioning.projectDirectories) {
-        $path = $dir.Replace("{root}", $root)
-        $path = [Environment]::ExpandEnvironmentVariables($path)
-        if (-not (Test-Path $path)) {
-            New-Item -ItemType Directory -Path $path -Force | Out-Null
-            Write-Info "Verzeichnis erstellt: $path"
-        }
+{
+  "schemaVersion": "1.0",
+  "root": "C:\\",
+  "features": {
+    "createFolders": true,
+    "createSupportUser": true,
+    "enableTranscriptLogging": true
+  },
+  "folderProvisioning": {
+    "projectDirectories": [
+      "{root}\\00_TestingTechnology\\01_BrakeMachineControl",
+      "{root}\\00_TestingTechnology\\02_ElrondData",
+      "{root}\\01_Projects",
+      "{root}\\02_Tools",
+      "{root}\\03_Temp",
+      "{root}\\04_Measurement\\01_IMC",
+      "{root}\\04_Measurement\\02_EXAM",
+      "{root}\\04_Measurement\\03_CANape",
+      "{root}\\04_Measurement\\04_CANoe",
+      "{root}\\04_Measurement\\05_CANalyzer"
+    ]
+  },
+  "localSupportAccount": {
+    "username": "Support",
+    "password": "Adm_Supp0rt",
+    "description": "Support-Admin fuer Wartung",
+    "addToAdministratorsGroup": true
+  },
+  "systemSecuritySettings": {
+    "enableLocalAccountTokenFilterPolicy": true,
+    "executionPolicyForScripts": "RemoteSigned"
+  },
+  "logging": {
+    "directory": "$PSScriptRoot",
+    "fileNamePattern": "SupportSetup_{timestamp}.log"
+  },
+
+  "jobs": [
+     {
+      "Source": "\\\\emea.zf-world.com\\sCW\\INDUST~1\\OG-EAN~3\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Chrome\\ChromeStandaloneSetup64_26032025.exe",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "ChromeStandaloneSetup64_26032025.exe",
+      "LogFile": "$PSScriptRoot\\log_chrome_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\sCW\\INDUST~1\\OG-EAN~3\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Chrome\\ChromeStandaloneSetup64_26032025.exe",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "ChromeStandaloneSetup64_26032025.exe",
+      "LogFile": "$PSScriptRoot\\log_chrome_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\sCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Etas\\Inca\\INCA_v7.5",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "INCA_v7.5",
+      "LogFile": "$PSScriptRoot\\log_inca_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Vector\\CANoe\\CANoe_18\\CANoe_V18.zip",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "CANoe_V18.zip",
+      "LogFile": "$PSScriptRoot\\log_CANoe_V18_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Vector\\CANape\\CANape_23\\CANapeTBE23.0.11.139(c4466af4)SP1HF1.zip",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "CANapeTBE23.0.11.139(c4466af4)SP1HF1.zip",
+      "LogFile": "$PSScriptRoot\\log_CANapeTBE23_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Vector\\CANalyzer\\CANalyzerFamily_18_SP4.zip",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "CANalyzerFamily_18_SP4.zip",
+      "LogFile": "$PSScriptRoot\\log_CANalyzerFamily_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\BeyondCompare\\BCompare-de-4.3.7.25118.exe",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "BCompare-de-4.3.7.25118.exe",
+      "LogFile": "$PSScriptRoot\\log_BCompare-de_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\BeyondCompare\\Key_Version4.pdf",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "Key_Version4.pdf",
+      "LogFile": "$PSScriptRoot\\log_Key_Version_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Imc\\Famos\\imc_FAMOS_2023_R2.7z",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "imc_FAMOS_2023_R2.7z",
+      "LogFile": "$PSScriptRoot\\log_imc_FAMOS_{timestamp}.txt"
+    },
+    {
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Imc\\Studio\\Installer_imc_STUDIO_2023_R6_2024-03-06_AddOn_2024_03_26.exe",
+      "Target": "C:\\02_Tools\\",
+      "FilePattern": "Installer_imc_STUDIO_2023_R6_2024-03-06_AddOn_2024_03_26.exe",
+      "LogFile": "$PSScriptRoot\\log_installer_imc_{timestamp}.txt"
     }
-    Write-Info "Alle Ordner erstellt."
+  ]
 }
-# ===================== Sicherheitsrichtlinien setzen =====================
-if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
-    if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
-        try {
-            Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
-            Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
-        } catch {
-            Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
-        }
-    }
-}
-# ===================== Lokales Supportkonto anlegen =====================
-# Variables for the registry change
-$registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
-$registryName = "LocalAccountTokenFilterPolicy"
-$registryValue = 1
-# Params for the new user
-$password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
-$params = @{
-    Name = 'Support'
-    Password = $password
-    Description = 'Support User for administration'
-}
-# Add new local "Support" user
-New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
-# Add the "Support" user to the "Administrators" group
-Add-LocalGroupMember -Group "Administratoren" -Member "Support"
-# ===================== Dateien kopieren =====================
-if ($cfg.jobs) {
-    foreach ($job in $cfg.jobs) {
-        try {
-            $source = $job.Source.Replace("{root}", $root)
-            $source = [Environment]::ExpandEnvironmentVariables($source)
-            $destination = $job.Target.Replace("{root}", $root)
-            $destination = [Environment]::ExpandEnvironmentVariables($destination)
-            $logFile = $job.LogFile.Replace("{timestamp}", (Get-Date -Format "yyyyMMdd_HHmmss"))
-            $logFile = [Environment]::ExpandEnvironmentVariables($logFile)
-            if (-not (Test-Path $destination)) {
-                New-Item -ItemType Directory -Path $destination -Force | Out-Null
-            }
-            Write-Info "Kopiere $($job.FilePattern) von $source nach $destination"
-            Copy-Item -Path $source -Destination $destination -Force
-            Write-Info "Erfolg: $($job.FilePattern) kopiert."
-            if ($logFile) {
-                Add-Content -Path $logFile -Value "$(Get-Date) ERFOLG: $source nach $destination kopiert"
-            }
-        } catch {
-            Write-Err "Fehler beim Kopieren von $($job.FilePattern): $_"
-            if ($logFile) {
-                Add-Content -Path $logFile -Value "$(Get-Date) FEHLER: $_"
-            }
-        }
-    }
-}
-# ===================== Cleanup =====================
-if ($cfg.features.enableTranscriptLogging) {
-    Stop-Transcript | Out-Null
-}
-Write-Info "Skript abgeschlossen."
