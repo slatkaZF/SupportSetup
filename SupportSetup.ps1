@@ -17,10 +17,13 @@ if (-not (Test-Path $ConfigPath)) {
 }
 $cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $root = $cfg.root
+
+
 Write-Info "Root-Verzeichnis: $root"
 # ===================== Transcript-Logging (falls aktiviert) =====================
 if ($cfg.features.enableTranscriptLogging) {
-    $logDir = [Environment]::ExpandEnvironmentVariables($cfg.logging.directory)
+    $logDir = $PSScriptRoot
+    #if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
     $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
     $transcriptPath = Join-Path $logDir $logFile
     Start-Transcript -Path $transcriptPath -Force | Out-Null
@@ -41,14 +44,14 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
 }
 # ===================== Sicherheitsrichtlinien setzen =====================
 #if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
-    #if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
-        #try {
-           # Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
-            #Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
-       # } catch {
-          #  Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
-       # }
-   # }
+#if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
+#try {
+# Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
+#Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
+# } catch {
+#  Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
+# }
+# }
 #}
 # ===================== Lokales Supportkonto anlegen =====================
 # Variables for the registry change
@@ -58,8 +61,8 @@ $registryValue = 1
 # Params for the new user
 $password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
 $params = @{
-    Name = 'Support'
-    Password = $password
+    Name        = 'Support'
+    Password    = $password
     Description = 'Support User for administration'
 }
 # Add new local "Support" user
@@ -71,9 +74,15 @@ if ($cfg.jobs) {
     foreach ($job in $cfg.jobs) {
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
-        $fileName = $job.FilePattern
+        #Write-Info "Source Name: $source"
+        $splitArray = $source.split("\\")
+        $lastPart = $splitArray[-1]
+        Write-Info "SPLITARRAY: $lastPart"
+
+
+        # TODO: String Split
+        $fileName = $lastPart
         $destinationFile = "$destination\$fileName" # Pfad der kopierten Datei, z. B. C:\02_Tools\ChromeStandaloneSetup64_26032025.exe
-        
         Write-Info "Kopiere $fileName nach $destination"
         Copy-Item -Path $source -Destination $destination -Force
         Write-Info "Erfolg: $fileName kopiert."
