@@ -18,10 +18,27 @@ if (-not (Test-Path $ConfigPath)) {
 $cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $root = $cfg.root
 Write-Info "Root-Verzeichnis: $root"
+# ===================== Prüfen, ob $PSScriptRoot schreibbar ist =====================
+if (-not (Test-Path $PSScriptRoot -PathType Container)) {
+    Write-Err "Das Skriptverzeichnis $PSScriptRoot existiert nicht oder ist kein Verzeichnis."
+    exit 1
+}
+try {
+    $testFile = Join-Path $PSScriptRoot "test_$(Get-Date -Format 'yyyyMMdd_HHmmss').tmp"
+    New-Item -Path $testFile -ItemType File -Force | Out-Null
+    Remove-Item -Path $testFile -Force | Out-Null
+    Write-Info "Skriptverzeichnis $PSScriptRoot ist schreibbar."
+} catch {
+    Write-Err "Das Skriptverzeichnis $PSScriptRoot ist nicht schreibbar: $_"
+    exit 1
+}
 # ===================== Transcript-Logging (falls aktiviert) =====================
 if ($cfg.features.enableTranscriptLogging) {
     $logDir = [Environment]::ExpandEnvironmentVariables($cfg.logging.directory)
-    #if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+    if ($logDir -ne $PSScriptRoot) {
+        Write-Warn "Warnung: Log-Verzeichnis ($logDir) weicht von $PSScriptRoot ab. Verwende $PSScriptRoot."
+        $logDir = $PSScriptRoot
+    }
     $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
     $transcriptPath = Join-Path $logDir $logFile
     Start-Transcript -Path $transcriptPath -Force | Out-Null
@@ -41,16 +58,16 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
     Write-Info "Alle Ordner erstellt."
 }
 # ===================== Sicherheitsrichtlinien setzen =====================
-#if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
-    #if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
-        #try {
-           # Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
-            #Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
-       # } catch {
-          #  Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
-       # }
-   # }
-#}
+if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
+    if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
+        try {
+            Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
+            Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
+        } catch {
+            Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
+        }
+    }
+}
 # ===================== Lokales Supportkonto anlegen =====================
 # Variables for the registry change
 $registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
@@ -67,21 +84,36 @@ $params = @{
 New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
 # Add the "Support" user to the "Administrators" group
 Add-LocalGroupMember -Group "Administratoren" -Member "Support"
-# ===================== Dateien kopieren und entsperren =====================
+# ===================== Dateien kopieren =====================
 if ($cfg.jobs) {
     foreach ($job in $cfg.jobs) {
-        $source = $job.Source.Replace("{root}", $root)
-        $destination = $job.Target.Replace("{root}", $root)
-        $fileName = $job.FilePattern
-        $destinationFile = "$destination\$fileName" # Pfad der kopierten Datei, z. B. C:\02_Tools\ChromeStandaloneSetup64_26032025.exe
-        
-        Write-Info "Kopiere $fileName nach $destination"
-        Copy-Item -Path $source -Destination $destination -Force
-        Write-Info "Erfolg: $fileName kopiert."
-        
-        # Datei entsperren
-        Unblock-File -Path $destinationFile
-        Write-Info "Datei entsperrt: $destinationFile"
+        try {
+            $source = $job.Source.Replace("{root}", $root)
+            $source = [Environment]::ExpandEnvironmentVariables($source)
+            $destination = $job.Target.Replace("{root}", $root)
+            $destination = [Environment]::ExpandEnvironmentVariables($destination)
+            $logFile = $job.LogFile.Replace("{timestamp}", (Get-Date -Format "yyyyMMdd_HHmmss"))
+            $logFile = [Environment]::ExpandEnvironmentVariables($logFile)
+            if ($logFile -notlike "$PSScriptRoot\*") {
+                Write-Warn "Warnung: Logdatei ($logFile) liegt nicht in $PSScriptRoot. Verwende $PSScriptRoot."
+                $logFileName = Split-Path $logFile -Leaf
+                $logFile = Join-Path $PSScriptRoot $logFileName
+            }
+            if (-not (Test-Path $destination)) {
+                New-Item -ItemType Directory -Path $destination -Force | Out-Null
+            }
+            Write-Info "Kopiere $($job.FilePattern) von $source nach $destination"
+            Copy-Item -Path $source -Destination $destination -Force
+            Write-Info "Erfolg: $($job.FilePattern) kopiert."
+            if ($logFile) {
+                Add-Content -Path $logFile -Value "$(Get-Date) ERFOLG: $source nach $destination kopiert"
+            }
+        } catch {
+            Write-Err "Fehler beim Kopieren von $($job.FilePattern): $_"
+            if ($logFile) {
+                Add-Content -Path $logFile -Value "$(Get-Date) FEHLER: $_"
+            }
+        }
     }
 }
 # ===================== Cleanup =====================
