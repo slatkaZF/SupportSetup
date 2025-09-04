@@ -20,11 +20,8 @@ $root = $cfg.root
 Write-Info "Root-Verzeichnis: $root"
 # ===================== Transcript-Logging (falls aktiviert) =====================
 if ($cfg.features.enableTranscriptLogging) {
-    $logDir = $PSScriptRoot
-    if (-not (Test-Path $logDir)) {
-        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
-        Write-Info "Log-Verzeichnis erstellt: $logDir"
-    }
+    $logDir = [Environment]::ExpandEnvironmentVariables($cfg.logging.directory)
+    #if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
     $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
     $transcriptPath = Join-Path $logDir $logFile
     Start-Transcript -Path $transcriptPath -Force | Out-Null
@@ -71,35 +68,21 @@ New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNe
 # Add the "Support" user to the "Administrators" group
 Add-LocalGroupMember -Group "Administratoren" -Member "Support"
 # ===================== Dateien kopieren =====================
+# ===================== Dateien kopieren und entsperren =====================
 if ($cfg.jobs) {
     foreach ($job in $cfg.jobs) {
-        try {
-            $source = $job.Source.Replace("{root}", $root)
-            $source = [Environment]::ExpandEnvironmentVariables($source)
-            $destination = $job.Target.Replace("{root}", $root)
-            $destination = [Environment]::ExpandEnvironmentVariables($destination)
-            $logFile = $job.LogFile.Replace("{timestamp}", (Get-Date -Format "yyyyMMdd_HHmmss"))
-            $logFile = Join-Path $PSScriptRoot (Split-Path $logFile -Leaf)
-            if (-not (Test-Path $destination)) {
-                New-Item -ItemType Directory -Path $destination -Force | Out-Null
-                Write-Info "Zielverzeichnis erstellt: $destination"
-            }
-            if (-not (Test-Path $PSScriptRoot)) {
-                New-Item -ItemType Directory -Path $PSScriptRoot -Force | Out-Null
-                Write-Info "Log-Verzeichnis für Job erstellt: $PSScriptRoot"
-            }
-            Write-Info "Kopiere $($job.FilePattern) von $source nach $destination"
-            Copy-Item -Path $source -Destination $destination -Force
-            Write-Info "Erfolg: $($job.FilePattern) kopiert."
-            if ($logFile) {
-                Add-Content -Path $logFile -Value "$(Get-Date) ERFOLG: $source nach $destination kopiert"
-            }
-        } catch {
-            Write-Err "Fehler beim Kopieren von $($job.FilePattern): $_"
-            if ($logFile) {
-                Add-Content -Path $logFile -Value "$(Get-Date) FEHLER: $_"
-            }
-        }
+        $source = $job.Source.Replace("{root}", $root)
+        $destination = $job.Target.Replace("{root}", $root)
+        $fileName = $job.FilePattern
+        $destinationFile = "$destination\$fileName" # Pfad der kopierten Datei, z. B. C:\02_Tools\ChromeStandaloneSetup64_26032025.exe
+        
+        Write-Info "Kopiere $fileName nach $destination"
+        Copy-Item -Path $source -Destination $destination -Force
+        Write-Info "Erfolg: $fileName kopiert."
+        
+        # Datei entsperren
+        Unblock-File -Path $destinationFile
+        Write-Info "Datei entsperrt: $destinationFile"
     }
 }
 # ===================== Cleanup =====================
