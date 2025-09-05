@@ -19,21 +19,22 @@ $totalTasks = 1 + # Konfigurationsladen
               (2 * $cfg.jobs.Count) + # Dateikopieren + Entsperren pro Job
               2 # Transcript Start/Stop
 $currentTask = 0
-$barLength = 20
+$terminalWidth = 80  # Breite des Terminals (kann angepasst werden)
 $cat = "^.^>"
 $catPosition = 0
 
-# Funktion zum Aktualisieren des Fortschrittsbalkens
+# Funktion zum Aktualisieren des Fortschrittsbalkens und der Animation
 function Update-Progress {
     param($Status)
     $script:currentTask++
     $percent = [math]::Round(($currentTask / $totalTasks) * 100, 2)
-    $script:catPosition = [math]::Round($percent / 100 * ($barLength - 1))  # Position der Katze (0 bis 19)
-    $bar = "-" * $barLength  # Virtueller Balken (z. B. "-----------------")
-    $display = $bar.ToCharArray()
-    $display[$catPosition] = $cat  # Setze die Katze an die Position
-    $animatedStatus = "$([string]::Join("", $display)) $Status ($percent% abgeschlossen)"
-    Write-Progress -Activity "Lade Skript..." -Status $animatedStatus -PercentComplete $percent
+    $script:catPosition = [math]::Round($percent / 100 * ($terminalWidth - $cat.Length))  # Position der Katze
+    Clear-Host  # Löscht den Bildschirm, um die Katze zu bewegen
+    # Zeichne die Katze
+    $line = " " * $catPosition + $cat
+    Write-Host -ForegroundColor Cyan $line
+    # Zeige den Fortschrittsbalken
+    Write-Progress -Activity "Lade Skript..." -Status "$Status ($percent% abgeschlossen)" -PercentComplete $percent
     Start-Sleep -Milliseconds 200  # Verzögerung für sichtbare Animation
 }
 # ===================== Konfiguration laden =====================
