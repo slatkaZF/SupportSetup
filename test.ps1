@@ -69,24 +69,17 @@ $percentLabel.Font = New-Object System.Drawing.Font("Arial", 10, [System.Drawing
 $percentLabel.ForeColor = [System.Drawing.Color]::White
 $form.Controls.Add($percentLabel)
 
-# Animation (Platzhalter für GIF)
+# Animation (Standard Männchen mit Kaffeetasse und Dampf)
 $animation = New-Object System.Windows.Forms.PictureBox
 $animation.Size = New-Object System.Drawing.Size(50, 50)
-$animation.Location = New-Object System.Drawing.Point(200, 50) # Zentriert über dem Balken für bessere Sichtbarkeit
+$animation.Location = New-Object System.Drawing.Point(200, 50) # Zentriert über dem Balken
 $animation.SizeMode = "StretchImage"
-# Versuche lokale GIF, fallback auf Platzhalter-URL
-$gifPath = Join-Path $PSScriptRoot "coffee_animation.gif"
 try {
-    if (Test-Path $gifPath) {
-        $animation.Image = [System.Drawing.Image]::FromFile($gifPath)
-        Write-Info "Lokale GIF geladen: $gifPath"
-    } else {
-        # Verbesserte Platzhalter-URL (animierte Kaffeetasse mit Rauch und Person-ähnlicher Darstellung; ersetze durch deine eigene)
-        $animation.Load("https://media.giphy.com/media/l2JhrYY3S51V7N71S/giphy.gif") # Beispiel: Person mit Kaffeetasse
-        Write-Warn "Lokale GIF nicht gefunden: $gifPath. Verwende Platzhalter-URL. Stelle sicher, dass Internet verfügbar ist."
-    }
+    # Standard-GIF-URL: Cartoon-Charakter mit Kaffeetasse und animiertem Dampf (free-to-use von GIPHY)
+    $animation.Load("https://media.giphy.com/media/l2JhrYY3S51V7N71S/giphy.gif")
+    Write-Info "Standard-Animation geladen: Männchen mit Kaffeetasse und Dampf."
 } catch {
-    Write-Err "Fehler beim Laden der GIF: $_. Überprüfe den Pfad oder die URL."
+    Write-Err "Fehler beim Laden der Standard-Animation: $_. Überprüfe die Internetverbindung oder ersetze die URL."
 }
 $form.Controls.Add($animation)
 
