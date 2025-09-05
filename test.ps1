@@ -10,79 +10,24 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Write-Err "Bitte führen Sie dieses Skript mit administrativen Rechten aus."
     exit 1
 }
-# ===================== Fortschrittsbalken initialisieren =====================
-Write-Info "Lade Konfiguration für Fortschrittsberechnung..."
-$cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$totalTasks = 1 + # Konfigurationsladen
-              $cfg.folderProvisioning.projectDirectories.Count + # Ordnererstellung
-              2 + # Benutzererstellung (Benutzer anlegen + Gruppe hinzufügen)
-              (2 * $cfg.jobs.Count) + # Dateikopieren + Entsperren pro Job
-              2 # Transcript Start/Stop
-$currentTask = 0
-$barLength = 30  # Länger für besseren Effekt
-$manFrames = @(
-@"
-  O   ~
- /|\ ( )
- / \  -
-"@,
-@"
-  O   ^
- /|\ ( )
- / \  -
-"@
-)
-$manIndex = 0
-$manPosition = 0
-
-# Funktion zum Aktualisieren des Fortschrittsbalkens und der Animation
-function Update-Progress {
-    param($Status)
-    $script:currentTask++
-    $script:manIndex = ($script:manIndex + 1) % 2  # Wechselt zwischen 0 und 1
-    $percent = [math]::Round(($currentTask / $totalTasks) * 100, 2)
-    $script:manPosition = [math]::Round($percent / 100 * ($barLength - 5))  # Position des Männchens (angepasst für Breite)
-    Clear-Host  # Löscht den Bildschirm, um die Animation zu aktualisieren
-    # Zeichne das Männchen mit Leerzeichen und Farben
-    $spaces = " " * $manPosition
-    $man = $manFrames[$manIndex]
-    $manLines = $man -split "`n"
-    if ($percent -lt 33) {
-        $color = "Red"
-    } elseif ($percent -lt 66) {
-        $color = "Yellow"
-    } else {
-        $color = "Green"
-    }
-    foreach ($line in $manLines) {
-        Write-Host -ForegroundColor $color "$spaces$line"
-    }
-    # Schöner Balken mit Effekten
-    $filled = [math]::Round($percent / 100 * $barLength)
-    $filledBar = "█" * $filled
-    $emptyBar = "-" * ($barLength - $filled)
-    Write-Host -ForegroundColor $color -NoNewline $filledBar
-    Write-Host -ForegroundColor Gray $emptyBar
-    # Zeige den Fortschrittsbalken
-    Write-Progress -Activity "Lade Skript..." -Status "$Status ($percent% abgeschlossen)" -PercentComplete $percent
-    Start-Sleep -Milliseconds 200  # Verzögerung für sichtbare Animation
-}
 # ===================== Konfiguration laden =====================
 if (-not (Test-Path $ConfigPath)) {
     Write-Err "Konfigurationsdatei nicht gefunden: $ConfigPath"
     exit 1
 }
+$cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $root = $cfg.root
-Update-Progress -Status "Konfiguration geladen"
+
+
 Write-Info "Root-Verzeichnis: $root"
 # ===================== Transcript-Logging (falls aktiviert) =====================
 if ($cfg.features.enableTranscriptLogging) {
     $logDir = $PSScriptRoot
+    #if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
     $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
     $transcriptPath = Join-Path $logDir $logFile
     Start-Transcript -Path $transcriptPath -Force | Out-Null
     Write-Info "Transcript gestartet: $transcriptPath"
-    Update-Progress -Status "Transcript gestartet"
 }
 # ===================== Ordner erstellen =====================
 if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories) {
@@ -94,47 +39,75 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
             New-Item -ItemType Directory -Path $path -Force | Out-Null
             Write-Info "Verzeichnis erstellt: $path"
         }
-        Update-Progress -Status "Verzeichnis erstellt: $path"
     }
     Write-Info "Alle Ordner erstellt."
 }
+# ===================== Sicherheitsrichtlinien setzen =====================
+#if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
+#if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
+#try {
+# Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
+#Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
+# } catch {
+#  Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
+# }
+# }
+#}
 # ===================== Lokales Supportkonto anlegen =====================
+# Variables for the registry change
 $registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
 $registryName = "LocalAccountTokenFilterPolicy"
 $registryValue = 1
+# Params for the new user
 $password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
 $params = @{
     Name        = 'Support'
     Password    = $password
     Description = 'Support User for administration'
 }
+# Add new local "Support" user
 New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
-Update-Progress -Status "Support-Benutzer erstellt"
+# Add the "Support" user to the "Administrators" group
 Add-LocalGroupMember -Group "Administratoren" -Member "Support"
-Update-Progress -Status "Support-Benutzer zur Administratorgruppe hinzugefügt"
 # ===================== Dateien kopieren und entsperren =====================
 if ($cfg.jobs) {
+    $jobCount = $cfg.jobs.Count
+    $barLength = 30
+    $jobIndex = 0
+
     foreach ($job in $cfg.jobs) {
+        $jobIndex++
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
-        $splitArray = $source.split("\\")
-        $fileName = $splitArray[-1]
+        $splitArray = $source.split("\")
+        $lastPart = $splitArray[-1]
+        Write-Info "SPLITARRAY: $lastPart"
+        $fileName = $lastPart
         $destinationFile = "$destination\$fileName"
         Write-Info "Kopiere $fileName nach $destination"
+
+        # ----- Fortschrittsbalken mit laufendem Männchen -----
+        for ($i = 0; $i -le $barLength; $i++) {
+            $progress = '=' * $i
+            $space = ' ' * ($barLength - $i)
+            $runner = '🏃'
+            $bar = "$progress$runner$space"
+            $percent = [math]::Round((($jobIndex-1 + ($i / $barLength)) / $jobCount) * 100)
+            Write-Host "`r[$bar] $percent%" -NoNewline
+            Start-Sleep -Milliseconds 30
+        }
+        Write-Host ""
+
         Copy-Item -Path $source -Destination $destination -Force
         Write-Info "Erfolg: $fileName kopiert."
-        Update-Progress -Status "Datei kopiert: $fileName"
-        
         Unblock-File -Path $destinationFile
         Write-Info "Datei entsperrt: $destinationFile"
-        Update-Progress -Status "Datei entsperrt: $destinationFile"
     }
+    Write-Host ""  # Endgültig Zeilenumbruch nach allen Jobs
 }
+
 # ===================== Cleanup =====================
 if ($cfg.features.enableTranscriptLogging) {
     Stop-Transcript | Out-Null
-    Update-Progress -Status "Transcript gestoppt"
 }
 Write-Info "Skript abgeschlossen."
-Update-Progress -Status "Skript abgeschlossen"
-[Console]::Beep(1000, 500)  # Piepton am Ende
