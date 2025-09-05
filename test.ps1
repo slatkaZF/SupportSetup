@@ -1,29 +1,3 @@
-
-[INFO] Modul PSWriteColor wird installiert...
-WARNUNG: Unable to resolve package source 'https://www.powershellgallery.com/api/v2'.
-PackageManagement\Install-Package : Für die angegebenen Suchkriterien und den Paketnamen "PSWriteColor" wurde kei
-Übereinstimmung gefunden. Verwenden Sie Get-PSRepository, um alle verfügbaren, registrierten Paketquellen anzuzei
-In C:\Program Files\WindowsPowerShell\Modules\PowerShellGet\1.0.0.1\PSModule.psm1:1772 Zeichen:21
-+ ...          $null = PackageManagement\Install-Package @PSBoundParameters
-+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (Microsoft.Power....InstallPackage:InstallPackage) [Install-Package
-   ception
-    + FullyQualifiedErrorId : NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPacka
-
-PS C:\SupportSetup>
-
-
-
-
-
-
-
-
-
-
-
-
-
 Clear-Host # Konsole leeren für sauberen Start
 # ===================== Pfad zur Konfigurationsdatei =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
@@ -44,12 +18,6 @@ if (-not (Test-Path $ConfigPath)) {
 $cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $root = $cfg.root
 
-if (-not (Get-Module -ListAvailable -Name PSWriteColor)) {
-    Write-Info "Modul PSWriteColor wird installiert..."
-    Install-Module -Name PSWriteColor -Scope CurrentUser -Force -ErrorAction Stop
-    Write-Info "Modul PSWriteColor erfolgreich installiert."
-}
-Import-Module PSWriteColor
 
 Write-Info "Root-Verzeichnis: $root"
 # ===================== Transcript-Logging (falls aktiviert) =====================
@@ -109,15 +77,6 @@ if ($cfg.jobs) {
     foreach ($job in $cfg.jobs) {
         $currentJob++
         $percentComplete = ($currentJob / $totalJobs) * 100
-        $barLength = 50
-        $filledLength = [math]::Round($percentComplete / 2)
-        $barFilled = "#" * $filledLength
-        $barEmpty = "-" * ($barLength - $filledLength)
-
-        # Fortschrittsbalken mit grüner Füllung
-        Write-Color -Text "[", "Green"
-        Write-Color -Text $barFilled, $barEmpty -Color Green, Gray
-        Write-Color -Text "] ", "$percentComplete% ($currentJob von $totalJobs)" -Color Green, Cyan
 
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
@@ -125,15 +84,17 @@ if ($cfg.jobs) {
         $fileName = $splitArray[-1]
         $destinationFile = "$destination\$fileName"
 
+        Write-Progress -Activity "Dateien kopieren" -Status "Kopiere $fileName ($currentJob von $totalJobs)" -PercentComplete $percentComplete
+
         Write-Info "Kopiere $fileName nach $destination"
         Copy-Item -Path $source -Destination $destination -Force
         Write-Info "Erfolg: $fileName kopiert."
-        
+
         # Datei entsperren
         Unblock-File -Path $destinationFile
         Write-Info "Datei entsperrt: $destinationFile"
     }
-    Write-Color -Text "Fertig!" -Color Green
+    Write-Progress -Activity "Dateien kopieren" -Completed
 }
 # ===================== Cleanup =====================
 if ($cfg.features.enableTranscriptLogging) {
