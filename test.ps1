@@ -42,7 +42,7 @@ $form.BackColor = [System.Drawing.Color]::FromArgb(0, 85, 102) # ZF-Blau (#00556
 
 # Titel-Label
 $label = New-Object System.Windows.Forms.Label
-$label.Text = "ZF Setup in Bearbeitung"
+$label.Text = "Setup in Bearbeitung"
 $label.AutoSize = $true
 $label.Location = New-Object System.Drawing.Point(10, 10)
 $label.Font = New-Object System.Drawing.Font("Arial", 12, [System.Drawing.FontStyle]::Bold)
@@ -74,13 +74,13 @@ $sticker = New-Object System.Windows.Forms.PictureBox
 $sticker.Size = New-Object System.Drawing.Size(90, 90)
 $sticker.Location = New-Object System.Drawing.Point(180, 30) # Angepasst für 90x90 Pixel
 $sticker.SizeMode = "StretchImage"
-$stickerPath = Join-Path $PSScriptRoot "coffee_sticker.gif"
+$stickerPath = Join-Path $PSScriptRoot "walking.gif"
 try {
     if (Test-Path $stickerPath) {
         $sticker.Image = [System.Drawing.Image]::FromFile($stickerPath)
         Write-Info "Sticker erfolgreich geladen: $stickerPath"
     } else {
-        Write-Warn "Sticker-GIF nicht gefunden: $stickerPath. Bitte speichere 'coffee_sticker.gif' (90x90 Pixel, Männchen mit Kaffeetasse und Rauch) im Skript-Verzeichnis."
+        Write-Warn "Sticker-GIF nicht gefunden: $stickerPath. Bitte speichere 'walking.gif' (90x90 Pixel, Männchen mit Kaffeetasse und Rauch) im Skript-Verzeichnis."
     }
 } catch {
     Write-Err "Fehler beim Laden des Stickers: $_"
