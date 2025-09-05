@@ -1,3 +1,71 @@
+In C:\SupportSetup\SupportSetup.ps1:121 Zeichen:9
++         $percentLabel.Invoke({ $percentLabel.Text = "$using:percentCo ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodException
+    + FullyQualifiedErrorId : MethodCountCouldNotFindBest
+
+Ausnahme beim Aufrufen von "Invoke" mit 1 Argument(en):  "Invoke oder BeginInvoke kann für ein Steuereleme
+aufgerufen werden, wenn das Fensterhandle erstellt wurde."
+In C:\SupportSetup\SupportSetup.ps1:122 Zeichen:9
++         $form.Invoke([Action] { $form.Refresh() })
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : InvalidOperationException
+
+Ausnahme beim Aufrufen von "Invoke" mit 1 Argument(en):  "Invoke oder BeginInvoke kann für ein Steuereleme
+aufgerufen werden, wenn das Fensterhandle erstellt wurde."
+In C:\SupportSetup\SupportSetup.ps1:123 Zeichen:9
++         $form.Invoke([Action] { [System.Windows.Forms.Application]::D ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : InvalidOperationException
+
+Für "Invoke" und die folgende Argumenteanzahl kann keine Überladung gefunden werden: "1".
+In C:\SupportSetup\SupportSetup.ps1:120 Zeichen:9
++         $progressBar.Invoke({ $progressBar.Value = $using:percentComp ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodException
+    + FullyQualifiedErrorId : MethodCountCouldNotFindBest
+
+Für "Invoke" und die folgende Argumenteanzahl kann keine Überladung gefunden werden: "1".
+In C:\SupportSetup\SupportSetup.ps1:121 Zeichen:9
++         $percentLabel.Invoke({ $percentLabel.Text = "$using:percentCo ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodException
+    + FullyQualifiedErrorId : MethodCountCouldNotFindBest
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Clear-Host # Konsole leeren für sauberen Start
 
 # ===================== Pfad zur Konfigurationsdatei =====================
