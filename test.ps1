@@ -1,3 +1,29 @@
+
+[INFO] Modul PSWriteColor wird installiert...
+WARNUNG: Unable to resolve package source 'https://www.powershellgallery.com/api/v2'.
+PackageManagement\Install-Package : Für die angegebenen Suchkriterien und den Paketnamen "PSWriteColor" wurde kei
+Übereinstimmung gefunden. Verwenden Sie Get-PSRepository, um alle verfügbaren, registrierten Paketquellen anzuzei
+In C:\Program Files\WindowsPowerShell\Modules\PowerShellGet\1.0.0.1\PSModule.psm1:1772 Zeichen:21
++ ...          $null = PackageManagement\Install-Package @PSBoundParameters
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (Microsoft.Power....InstallPackage:InstallPackage) [Install-Package
+   ception
+    + FullyQualifiedErrorId : NoMatchFoundForCriteria,Microsoft.PowerShell.PackageManagement.Cmdlets.InstallPacka
+
+PS C:\SupportSetup>
+
+
+
+
+
+
+
+
+
+
+
+
+
 Clear-Host # Konsole leeren für sauberen Start
 # ===================== Pfad zur Konfigurationsdatei =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
