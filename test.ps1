@@ -28,14 +28,12 @@ function Update-Progress {
     param($Status)
     $script:currentTask++
     $percent = [math]::Round(($currentTask / $totalTasks) * 100, 2)
-    $filled = [math]::Round($percent / 100 * $barLength)
-    $bar = "#" * $filled + "-" * ($barLength - $filled)
-    $script:catPosition = [math]::Round($percent / 100 * ($barLength - 1))  # Position der Katze
+    $script:catPosition = [math]::Round($percent / 100 * ($barLength - 1))  # Position der Katze (0 bis 19)
+    $bar = "-" * $barLength  # Virtueller Balken (z. B. "-----------------")
     $display = $bar.ToCharArray()
-    $display[$catPosition] = $cat  # Setze die Katze an die berechnete Position
-    $animatedStatus = "$([string]::Join("", $display)) $Status"
-    Write-Progress -Activity "Lade Skript..." -Status "$percent% abgeschlossen" -PercentComplete $percent
-    Write-Host -ForegroundColor Cyan "$animatedStatus"
+    $display[$catPosition] = $cat  # Setze die Katze an die Position
+    $animatedStatus = "$([string]::Join("", $display)) $Status ($percent% abgeschlossen)"
+    Write-Progress -Activity "Lade Skript..." -Status $animatedStatus -PercentComplete $percent
     Start-Sleep -Milliseconds 200  # Verzögerung für sichtbare Animation
 }
 # ===================== Konfiguration laden =====================
