@@ -1,3 +1,33 @@
+
+
+[INFO] Root-Verzeichnis: C:\
+[INFO] Transcript gestartet: C:\SupportSetup\SupportSetup_20250905_114842.log
+[ERROR] Fehler beim Laden der Standard-Animation: Ausnahme beim Aufrufen von "Load" mit 1 Argument(en):  "Die Anfrage wu
+rde abgebrochen: Es konnte kein geschützter SSL/TLS-Kanal erstellt werden..". ÃœberprÃ¼fe die Internetverbindung oder er
+setze die URL.
+[INFO] Erstelle Projektordner...
+[INFO] Alle Ordner erstellt.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Clear-Host # Konsole leeren für sauberen Start
 # ===================== Pfad zur Konfigurationsdatei =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
