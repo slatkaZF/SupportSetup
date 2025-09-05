@@ -18,12 +18,10 @@ if (-not (Test-Path $ConfigPath)) {
 $cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $root = $cfg.root
 
-
 Write-Info "Root-Verzeichnis: $root"
 # ===================== Transcript-Logging (falls aktiviert) =====================
 if ($cfg.features.enableTranscriptLogging) {
     $logDir = $PSScriptRoot
-    #if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
     $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
     $transcriptPath = Join-Path $logDir $logFile
     Start-Transcript -Path $transcriptPath -Force | Out-Null
@@ -32,27 +30,24 @@ if ($cfg.features.enableTranscriptLogging) {
 # ===================== Ordner erstellen =====================
 if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories) {
     Write-Info "Erstelle Projektordner..."
+    $totalDirs = $cfg.folderProvisioning.projectDirectories.Count
+    $currentDir = 0
     foreach ($dir in $cfg.folderProvisioning.projectDirectories) {
+        $currentDir++
+        $percentComplete = ($currentDir / $totalDirs) * 100
         $path = $dir.Replace("{root}", $root)
         $path = [Environment]::ExpandEnvironmentVariables($path)
+        Write-Progress -Activity "Erstelle Projektordner" -Status "Verarbeite Ordner $currentDir von $totalDirs" -PercentComplete $percentComplete -CurrentOperation $path
         if (-not (Test-Path $path)) {
             New-Item -ItemType Directory -Path $path -Force | Out-Null
             Write-Info "Verzeichnis erstellt: $path"
         }
     }
+    Write-Progress -Activity "Erstelle Projektordner" -Completed
     Write-Info "Alle Ordner erstellt."
 }
 # ===================== Sicherheitsrichtlinien setzen =====================
-#if ($cfg.features.setSecurityPolicies -and $cfg.systemSecuritySettings) {
-#if ($cfg.systemSecuritySettings.executionPolicyForScripts) {
-#try {
-# Set-ExecutionPolicy -ExecutionPolicy $cfg.systemSecuritySettings.executionPolicyForScripts -Scope LocalMachine -Force
-#Write-Info "ExecutionPolicy auf $($cfg.systemSecuritySettings.executionPolicyForScripts) gesetzt."
-# } catch {
-#  Write-Warn "ExecutionPolicy konnte nicht gesetzt werden: $_"
-# }
-# }
-#}
+# (Dieser Abschnitt bleibt unverändert, da er auskommentiert ist)
 # ===================== Lokales Supportkonto anlegen =====================
 # Variables for the registry change
 $registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
@@ -73,28 +68,24 @@ Add-LocalGroupMember -Group "Administratoren" -Member "Support"
 if ($cfg.jobs) {
     $totalJobs = $cfg.jobs.Count
     $currentJob = 0
-
     foreach ($job in $cfg.jobs) {
         $currentJob++
         $percentComplete = ($currentJob / $totalJobs) * 100
-
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
-        $splitArray = $source.Split("\\")
-        $fileName = $splitArray[-1]
+        $splitArray = $source.split("\\")
+        $lastPart = $splitArray[-1]
+        Write-Info "SPLITARRAY: $lastPart"
+        $fileName = $lastPart
         $destinationFile = "$destination\$fileName"
-
-        Write-Progress -Activity "Dateien kopieren" -Status "Kopiere $fileName ($currentJob von $totalJobs)" -PercentComplete $percentComplete
-
+        Write-Progress -Activity "Kopiere Dateien" -Status "Kopiere Datei $currentJob von $totalJobs" -PercentComplete $percentComplete -CurrentOperation $fileName
         Write-Info "Kopiere $fileName nach $destination"
         Copy-Item -Path $source -Destination $destination -Force
         Write-Info "Erfolg: $fileName kopiert."
-
-        # Datei entsperren
         Unblock-File -Path $destinationFile
         Write-Info "Datei entsperrt: $destinationFile"
     }
-    Write-Progress -Activity "Dateien kopieren" -Completed
+    Write-Progress -Activity "Kopiere Dateien" -Completed
 }
 # ===================== Cleanup =====================
 if ($cfg.features.enableTranscriptLogging) {
