@@ -19,34 +19,23 @@ $totalTasks = 1 + # Konfigurationsladen
               (2 * $cfg.jobs.Count) + # Dateikopieren + Entsperren pro Job
               2 # Transcript Start/Stop
 $currentTask = 0
-$animation = @("|", "/", "-", "\")
-$animationIndex = 0
-$manFrames = @("O->", "O-^", "O->", "O-^")
-$manIndex = 0
-$maxSpaces = 15
-$spaceCount = 0
+$barLength = 20
+$cat = "^.^>"
+$catPosition = 0
 
 # Funktion zum Aktualisieren des Fortschrittsbalkens
 function Update-Progress {
     param($Status)
     $script:currentTask++
-    $script:animationIndex = ($script:animationIndex + 1) % 4
-    $script:manIndex = ($script:manIndex + 1) % 4
-    $script:spaceCount = ($script:spaceCount + 1) % $maxSpaces
     $percent = [math]::Round(($currentTask / $totalTasks) * 100, 2)
-    $animatedStatus = "[$($animation[$animationIndex])] $Status"
-    Write-Progress -Activity "Lade Skript..." -Status "$animatedStatus ($percent% abgeschlossen)" -PercentComplete $percent
-    # ASCII-Männchen in der Konsole
-    $spaces = " " * $spaceCount
-    $man = $manFrames[$manIndex]
-    if ($percent -lt 33) {
-        Write-Host -ForegroundColor Red "$spaces$man" -NoNewline
-    } elseif ($percent -lt 66) {
-        Write-Host -ForegroundColor Yellow "$spaces$man" -NoNewline
-    } else {
-        Write-Host -ForegroundColor Green "$spaces$man" -NoNewline
-    }
-    Write-Host -ForegroundColor Cyan " [INFO] $animatedStatus"
+    $filled = [math]::Round($percent / 100 * $barLength)
+    $bar = "#" * $filled + "-" * ($barLength - $filled)
+    $script:catPosition = [math]::Round($percent / 100 * ($barLength - 1))  # Position der Katze
+    $display = $bar.ToCharArray()
+    $display[$catPosition] = $cat  # Setze die Katze an die berechnete Position
+    $animatedStatus = "$([string]::Join("", $display)) $Status"
+    Write-Progress -Activity "Lade Skript..." -Status "$percent% abgeschlossen" -PercentComplete $percent
+    Write-Host -ForegroundColor Cyan "$animatedStatus"
     Start-Sleep -Milliseconds 200  # Verzögerung für sichtbare Animation
 }
 # ===================== Konfiguration laden =====================
