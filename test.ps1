@@ -29,22 +29,52 @@ if ($cfg.features.enableTranscriptLogging) {
 }
 # ===================== GUI-ProgressBar initialisieren =====================
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Skript-Fortschritt"
-$form.Size = New-Object System.Drawing.Size(300, 100)
+$form.Text = "ZF Setup"
+$form.Size = New-Object System.Drawing.Size(500, 200)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
 $form.MinimizeBox = $false
+$form.BackColor = [System.Drawing.Color]::FromArgb(0, 85, 102) # ZF-Blau (#005566)
 
+# Titel-Label
+$label = New-Object System.Windows.Forms.Label
+$label.Text = "ZF Setup in Bearbeitung"
+$label.AutoSize = $true
+$label.Location = New-Object System.Drawing.Point(10, 10)
+$label.Font = New-Object System.Drawing.Font("Arial", 12, [System.Drawing.FontStyle]::Bold)
+$label.ForeColor = [System.Drawing.Color]::White
+$form.Controls.Add($label)
+
+# Fortschrittsbalken
 $progressBar = New-Object System.Windows.Forms.ProgressBar
-$progressBar.Location = New-Object System.Drawing.Point(10, 20)
-$progressBar.Size = New-Object System.Drawing.Size(260, 20)
+$progressBar.Location = New-Object System.Drawing.Point(50, 100)
+$progressBar.Size = New-Object System.Drawing.Size(400, 20)
 $progressBar.Minimum = 0
 $progressBar.Maximum = 100
 $progressBar.Value = 0
-
+$progressBar.BackColor = [System.Drawing.Color]::White
+$progressBar.ForeColor = [System.Drawing.Color]::FromArgb(0, 255, 255) # Neon-Blau (#00FFFF)
 $form.Controls.Add($progressBar)
+
+# Animation (Platzhalter für GIF)
+$animation = New-Object System.Windows.Forms.PictureBox
+$animation.Size = New-Object System.Drawing.Size(50, 50)
+$animation.Location = New-Object System.Drawing.Point(400, 50) # Auf dem Balken, rechts
+$animation.SizeMode = "StretchImage"
+# Annahme: Eine GIF-Datei namens "coffee_animation.gif" liegt im Skript-Verzeichnis
+# Ersetze den Pfad mit deiner tatsächlichen GIF-Datei oder einer URL
+$gifPath = Join-Path $PSScriptRoot "coffee_animation.gif"
+if (Test-Path $gifPath) {
+    $animation.Image = [System.Drawing.Image]::FromFile($gifPath)
+} else {
+    Write-Warn "GIF-Datei nicht gefunden: $gifPath. Bitte füge eine Datei 'coffee_animation.gif' hinzu."
+}
+$form.Controls.Add($animation)
+
 $form.Show()
 # ===================== Fortschritt berechnen =====================
 $totalTasks = 0
