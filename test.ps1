@@ -72,20 +72,21 @@ $form.Controls.Add($percentLabel)
 # Animation (Platzhalter für GIF)
 $animation = New-Object System.Windows.Forms.PictureBox
 $animation.Size = New-Object System.Drawing.Size(50, 50)
-$animation.Location = New-Object System.Drawing.Point(400, 50) # Über dem Balken, rechts
+$animation.Location = New-Object System.Drawing.Point(200, 50) # Zentriert über dem Balken für bessere Sichtbarkeit
 $animation.SizeMode = "StretchImage"
 # Versuche lokale GIF, fallback auf Platzhalter-URL
 $gifPath = Join-Path $PSScriptRoot "coffee_animation.gif"
 try {
     if (Test-Path $gifPath) {
         $animation.Image = [System.Drawing.Image]::FromFile($gifPath)
+        Write-Info "Lokale GIF geladen: $gifPath"
     } else {
-        # Platzhalter-URL (Kaffeetasse mit Rauch, ersetze durch deine eigene GIF)
-        $animation.Load("https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif")
-        Write-Warn "Lokale GIF nicht gefunden: $gifPath. Verwende Platzhalter-URL."
+        # Verbesserte Platzhalter-URL (animierte Kaffeetasse mit Rauch und Person-ähnlicher Darstellung; ersetze durch deine eigene)
+        $animation.Load("https://media.giphy.com/media/l2JhrYY3S51V7N71S/giphy.gif") # Beispiel: Person mit Kaffeetasse
+        Write-Warn "Lokale GIF nicht gefunden: $gifPath. Verwende Platzhalter-URL. Stelle sicher, dass Internet verfügbar ist."
     }
 } catch {
-    Write-Warn "Fehler beim Laden der GIF: $_. Verwende eine Datei 'coffee_animation.gif' im Skript-Verzeichnis."
+    Write-Err "Fehler beim Laden der GIF: $_. Überprüfe den Pfad oder die URL."
 }
 $form.Controls.Add($animation)
 
