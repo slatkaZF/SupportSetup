@@ -77,6 +77,14 @@ if ($cfg.jobs) {
     foreach ($job in $cfg.jobs) {
         $currentJob++
         $percentComplete = ($currentJob / $totalJobs) * 100
+        $barLength = 50
+        $filledLength = [math]::Round($percentComplete / 2)
+        $bar = "#" * $filledLength + "-" * ($barLength - $filledLength)
+
+        Write-Host -NoNewline "["
+        Write-Host -NoNewline $bar -ForegroundColor Green
+        Write-Host -NoNewline "] "
+        Write-Host "$percentComplete% ($currentJob von $totalJobs)" -ForegroundColor Cyan
 
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
@@ -84,17 +92,14 @@ if ($cfg.jobs) {
         $fileName = $splitArray[-1]
         $destinationFile = "$destination\$fileName"
 
-        Write-Progress -Activity "Dateien kopieren" -Status "Kopiere $fileName ($currentJob von $totalJobs)" -PercentComplete $percentComplete
-
         Write-Info "Kopiere $fileName nach $destination"
         Copy-Item -Path $source -Destination $destination -Force
         Write-Info "Erfolg: $fileName kopiert."
 
-        # Datei entsperren
         Unblock-File -Path $destinationFile
         Write-Info "Datei entsperrt: $destinationFile"
     }
-    Write-Progress -Activity "Dateien kopieren" -Completed
+    Write-Host "Fertig!" -ForegroundColor Green
 }
 # ===================== Cleanup =====================
 if ($cfg.features.enableTranscriptLogging) {
