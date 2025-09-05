@@ -2,7 +2,7 @@ Clear-Host # Konsole leeren für sauberen Start
 # ===================== Pfad zur Konfigurationsdatei =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
 # ===================== Einfache Logging-Funktionen =====================
-function Write-Info { Write-Host "[INFO] $args" }
+function Write-Info { Write-Host "[INFO] $args" -ForegroundColor Green }
 function Write-Warn { Write-Host "[WARN] $args" -ForegroundColor Yellow }
 function Write-Err { Write-Host "[ERROR] $args" -ForegroundColor Red }
 # ===================== Adminrechte prüfen =====================
@@ -27,23 +27,49 @@ if ($cfg.features.enableTranscriptLogging) {
     Start-Transcript -Path $transcriptPath -Force | Out-Null
     Write-Info "Transcript gestartet: $transcriptPath"
 }
+# ===================== GUI-ProgressBar initialisieren =====================
+Add-Type -AssemblyName System.Windows.Forms
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Skript-Fortschritt"
+$form.Size = New-Object System.Drawing.Size(300, 100)
+$form.StartPosition = "CenterScreen"
+$form.FormBorderStyle = "FixedDialog"
+$form.MaximizeBox = $false
+$form.MinimizeBox = $false
+
+$progressBar = New-Object System.Windows.Forms.ProgressBar
+$progressBar.Location = New-Object System.Drawing.Point(10, 20)
+$progressBar.Size = New-Object System.Drawing.Size(260, 20)
+$progressBar.Minimum = 0
+$progressBar.Maximum = 100
+$progressBar.Value = 0
+
+$form.Controls.Add($progressBar)
+$form.Show()
+# ===================== Fortschritt berechnen =====================
+$totalTasks = 0
+if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories) {
+    $totalTasks += $cfg.folderProvisioning.projectDirectories.Count
+}
+if ($cfg.jobs) {
+    $totalTasks += $cfg.jobs.Count
+}
+$currentTask = 0
 # ===================== Ordner erstellen =====================
 if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories) {
     Write-Info "Erstelle Projektordner..."
-    $totalDirs = $cfg.folderProvisioning.projectDirectories.Count
-    $currentDir = 0
     foreach ($dir in $cfg.folderProvisioning.projectDirectories) {
-        $currentDir++
-        $percentComplete = ($currentDir / $totalDirs) * 100
+        $currentTask++
+        $percentComplete = [int](($currentTask / $totalTasks) * 100)
+        $progressBar.Value = $percentComplete
+        $form.Refresh()
         $path = $dir.Replace("{root}", $root)
         $path = [Environment]::ExpandEnvironmentVariables($path)
-        Write-Progress -Activity "Erstelle Projektordner" -Status "Verarbeite Ordner $currentDir von $totalDirs" -PercentComplete $percentComplete -CurrentOperation $path
         if (-not (Test-Path $path)) {
             New-Item -ItemType Directory -Path $path -Force | Out-Null
             Write-Info "Verzeichnis erstellt: $path"
         }
     }
-    Write-Progress -Activity "Erstelle Projektordner" -Completed
     Write-Info "Alle Ordner erstellt."
 }
 # ===================== Sicherheitsrichtlinien setzen =====================
@@ -66,27 +92,25 @@ New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNe
 Add-LocalGroupMember -Group "Administratoren" -Member "Support"
 # ===================== Dateien kopieren und entsperren =====================
 if ($cfg.jobs) {
-    $totalJobs = $cfg.jobs.Count
-    $currentJob = 0
     foreach ($job in $cfg.jobs) {
-        $currentJob++
-        $percentComplete = ($currentJob / $totalJobs) * 100
+        $currentTask++
+        $percentComplete = [int](($currentTask / $totalTasks) * 100)
+        $progressBar.Value = $percentComplete
+        $form.Refresh()
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
         $splitArray = $source.split("\\")
-        $lastPart = $splitArray[-1]
-        Write-Info "SPLITARRAY: $lastPart"
-        $fileName = $lastPart
+        $fileName = $splitArray[-1]
         $destinationFile = "$destination\$fileName"
-        Write-Progress -Activity "Kopiere Dateien" -Status "Kopiere Datei $currentJob von $totalJobs" -PercentComplete $percentComplete -CurrentOperation $fileName
         Write-Info "Kopiere $fileName nach $destination"
         Copy-Item -Path $source -Destination $destination -Force
         Write-Info "Erfolg: $fileName kopiert."
         Unblock-File -Path $destinationFile
         Write-Info "Datei entsperrt: $destinationFile"
     }
-    Write-Progress -Activity "Kopiere Dateien" -Completed
 }
+# ===================== GUI schließen =====================
+$form.Close()
 # ===================== Cleanup =====================
 if ($cfg.features.enableTranscriptLogging) {
     Stop-Transcript | Out-Null
