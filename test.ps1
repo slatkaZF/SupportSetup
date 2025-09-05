@@ -18,6 +18,12 @@ if (-not (Test-Path $ConfigPath)) {
 $cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $root = $cfg.root
 
+if (-not (Get-Module -ListAvailable -Name PSWriteColor)) {
+    Write-Info "Modul PSWriteColor wird installiert..."
+    Install-Module -Name PSWriteColor -Scope CurrentUser -Force -ErrorAction Stop
+    Write-Info "Modul PSWriteColor erfolgreich installiert."
+}
+Import-Module PSWriteColor
 
 Write-Info "Root-Verzeichnis: $root"
 # ===================== Transcript-Logging (falls aktiviert) =====================
@@ -79,12 +85,13 @@ if ($cfg.jobs) {
         $percentComplete = ($currentJob / $totalJobs) * 100
         $barLength = 50
         $filledLength = [math]::Round($percentComplete / 2)
-        $bar = "#" * $filledLength + "-" * ($barLength - $filledLength)
+        $barFilled = "#" * $filledLength
+        $barEmpty = "-" * ($barLength - $filledLength)
 
-        Write-Host -NoNewline "["
-        Write-Host -NoNewline $bar -ForegroundColor Green
-        Write-Host -NoNewline "] "
-        Write-Host "$percentComplete% ($currentJob von $totalJobs)" -ForegroundColor Cyan
+        # Fortschrittsbalken mit grüner Füllung
+        Write-Color -Text "[", "Green"
+        Write-Color -Text $barFilled, $barEmpty -Color Green, Gray
+        Write-Color -Text "] ", "$percentComplete% ($currentJob von $totalJobs)" -Color Green, Cyan
 
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
@@ -95,11 +102,12 @@ if ($cfg.jobs) {
         Write-Info "Kopiere $fileName nach $destination"
         Copy-Item -Path $source -Destination $destination -Force
         Write-Info "Erfolg: $fileName kopiert."
-
+        
+        # Datei entsperren
         Unblock-File -Path $destinationFile
         Write-Info "Datei entsperrt: $destinationFile"
     }
-    Write-Host "Fertig!" -ForegroundColor Green
+    Write-Color -Text "Fertig!" -Color Green
 }
 # ===================== Cleanup =====================
 if ($cfg.features.enableTranscriptLogging) {
