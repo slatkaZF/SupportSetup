@@ -80,10 +80,12 @@ try {
     if (Test-Path $stickerPath) {
         $sticker.Image = [System.Drawing.Image]::FromFile($stickerPath)
         Write-Info "Sticker erfolgreich geladen: $stickerPath"
-    } else {
+    }
+    else {
         Write-Warn "Sticker-GIF nicht gefunden: $stickerPath. Bitte speichere 'walking.gif' (50x50 Pixel, Männchen mit Kaffeetasse und Rauch) im Skript-Verzeichnis."
     }
-} catch {
+}
+catch {
     Write-Err "Fehler beim Laden des Stickers: $_"
 }
 $form.Controls.Add($sticker)
@@ -126,8 +128,8 @@ $registryValue = 1
 # Params for the new user
 $password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
 $params = @{
-    Name = 'Support'
-    Password = $password
+    Name        = 'Support'
+    Password    = $password
     Description = 'Support User for administration'
 }
 # Add new local "Support" user
