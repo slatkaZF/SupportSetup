@@ -1,20 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Clear-Host # Konsole leeren für sauberen Start
 
 # ===================== Pfad zur Konfigurationsdatei =====================
