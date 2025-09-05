@@ -60,18 +60,32 @@ $progressBar.BackColor = [System.Drawing.Color]::White
 $progressBar.ForeColor = [System.Drawing.Color]::FromArgb(0, 255, 255) # Neon-Blau (#00FFFF)
 $form.Controls.Add($progressBar)
 
+# Prozentanzeige
+$percentLabel = New-Object System.Windows.Forms.Label
+$percentLabel.Text = "0%"
+$percentLabel.AutoSize = $true
+$percentLabel.Location = New-Object System.Drawing.Point(230, 130)
+$percentLabel.Font = New-Object System.Drawing.Font("Arial", 10, [System.Drawing.FontStyle]::Regular)
+$percentLabel.ForeColor = [System.Drawing.Color]::White
+$form.Controls.Add($percentLabel)
+
 # Animation (Platzhalter für GIF)
 $animation = New-Object System.Windows.Forms.PictureBox
 $animation.Size = New-Object System.Drawing.Size(50, 50)
-$animation.Location = New-Object System.Drawing.Point(400, 50) # Auf dem Balken, rechts
+$animation.Location = New-Object System.Drawing.Point(400, 50) # Über dem Balken, rechts
 $animation.SizeMode = "StretchImage"
-# Annahme: Eine GIF-Datei namens "coffee_animation.gif" liegt im Skript-Verzeichnis
-# Ersetze den Pfad mit deiner tatsächlichen GIF-Datei oder einer URL
+# Versuche lokale GIF, fallback auf Platzhalter-URL
 $gifPath = Join-Path $PSScriptRoot "coffee_animation.gif"
-if (Test-Path $gifPath) {
-    $animation.Image = [System.Drawing.Image]::FromFile($gifPath)
-} else {
-    Write-Warn "GIF-Datei nicht gefunden: $gifPath. Bitte füge eine Datei 'coffee_animation.gif' hinzu."
+try {
+    if (Test-Path $gifPath) {
+        $animation.Image = [System.Drawing.Image]::FromFile($gifPath)
+    } else {
+        # Platzhalter-URL (Kaffeetasse mit Rauch, ersetze durch deine eigene GIF)
+        $animation.Load("https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif")
+        Write-Warn "Lokale GIF nicht gefunden: $gifPath. Verwende Platzhalter-URL."
+    }
+} catch {
+    Write-Warn "Fehler beim Laden der GIF: $_. Verwende eine Datei 'coffee_animation.gif' im Skript-Verzeichnis."
 }
 $form.Controls.Add($animation)
 
@@ -92,6 +106,7 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
         $currentTask++
         $percentComplete = [int](($currentTask / $totalTasks) * 100)
         $progressBar.Value = $percentComplete
+        $percentLabel.Text = "$percentComplete%"
         $form.Refresh()
         $path = $dir.Replace("{root}", $root)
         $path = [Environment]::ExpandEnvironmentVariables($path)
@@ -126,6 +141,7 @@ if ($cfg.jobs) {
         $currentTask++
         $percentComplete = [int](($currentTask / $totalTasks) * 100)
         $progressBar.Value = $percentComplete
+        $percentLabel.Text = "$percentComplete%"
         $form.Refresh()
         $source = $job.Source.Replace("{root}", $root)
         $destination = $job.Target.Replace("{root}", $root)
