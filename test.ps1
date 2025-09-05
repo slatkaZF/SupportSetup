@@ -19,27 +19,50 @@ $totalTasks = 1 + # Konfigurationsladen
               (2 * $cfg.jobs.Count) + # Dateikopieren + Entsperren pro Job
               2 # Transcript Start/Stop
 $currentTask = 0
-$terminalWidth = 80  # Breite des Terminals
-$cat = @"
-  /_/\  
-( o.o ) 
- > ^ <
+$barLength = 30  # Länger für besseren Effekt
+$manFrames = @(
+@"
+  O   ~
+ /|\ ( )
+ / \  -
+"@,
+@"
+  O   ^
+ /|\ ( )
+ / \  -
 "@
-$catPosition = 0
+)
+$manIndex = 0
+$manPosition = 0
 
 # Funktion zum Aktualisieren des Fortschrittsbalkens und der Animation
 function Update-Progress {
     param($Status)
     $script:currentTask++
+    $script:manIndex = ($script:manIndex + 1) % 2  # Wechselt zwischen 0 und 1
     $percent = [math]::Round(($currentTask / $totalTasks) * 100, 2)
-    $script:catPosition = [math]::Round($percent / 100 * ($terminalWidth - $cat.Length))  # Position der Katze
-    Clear-Host  # Löscht den Bildschirm, um die Katze zu bewegen
-    # Zeichne die Katze mit Leerzeichen
-    $spaces = " " * $catPosition
-    $catLines = $cat -split "`n"  # Teilt die Katze in Zeilen
-    foreach ($line in $catLines) {
-        Write-Host -ForegroundColor Cyan "$spaces$line"
+    $script:manPosition = [math]::Round($percent / 100 * ($barLength - 5))  # Position des Männchens (angepasst für Breite)
+    Clear-Host  # Löscht den Bildschirm, um die Animation zu aktualisieren
+    # Zeichne das Männchen mit Leerzeichen und Farben
+    $spaces = " " * $manPosition
+    $man = $manFrames[$manIndex]
+    $manLines = $man -split "`n"
+    if ($percent -lt 33) {
+        $color = "Red"
+    } elseif ($percent -lt 66) {
+        $color = "Yellow"
+    } else {
+        $color = "Green"
     }
+    foreach ($line in $manLines) {
+        Write-Host -ForegroundColor $color "$spaces$line"
+    }
+    # Schöner Balken mit Effekten
+    $filled = [math]::Round($percent / 100 * $barLength)
+    $filledBar = "█" * $filled
+    $emptyBar = "-" * ($barLength - $filled)
+    Write-Host -ForegroundColor $color -NoNewline $filledBar
+    Write-Host -ForegroundColor Gray $emptyBar
     # Zeige den Fortschrittsbalken
     Write-Progress -Activity "Lade Skript..." -Status "$Status ($percent% abgeschlossen)" -PercentComplete $percent
     Start-Sleep -Milliseconds 200  # Verzögerung für sichtbare Animation
