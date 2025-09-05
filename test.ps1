@@ -1,33 +1,3 @@
-https://giphy.com/stickers/cute-graphics-3DwT4LH6dbRG8
-
-[INFO] Root-Verzeichnis: C:\
-[INFO] Transcript gestartet: C:\SupportSetup\SupportSetup_20250905_114842.log
-[ERROR] Fehler beim Laden der Standard-Animation: Ausnahme beim Aufrufen von "Load" mit 1 Argument(en):  "Die Anfrage wu
-rde abgebrochen: Es konnte kein geschützter SSL/TLS-Kanal erstellt werden..". ÃœberprÃ¼fe die Internetverbindung oder er
-setze die URL.
-[INFO] Erstelle Projektordner...
-[INFO] Alle Ordner erstellt.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Clear-Host # Konsole leeren für sauberen Start
 # ===================== Pfad zur Konfigurationsdatei =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
@@ -99,19 +69,23 @@ $percentLabel.Font = New-Object System.Drawing.Font("Arial", 10, [System.Drawing
 $percentLabel.ForeColor = [System.Drawing.Color]::White
 $form.Controls.Add($percentLabel)
 
-# Animation (Standard Männchen mit Kaffeetasse und Dampf)
-$animation = New-Object System.Windows.Forms.PictureBox
-$animation.Size = New-Object System.Drawing.Size(50, 50)
-$animation.Location = New-Object System.Drawing.Point(200, 50) # Zentriert über dem Balken
-$animation.SizeMode = "StretchImage"
+# Sticker (animierte GIF mit Männchen, Kaffeetasse und Rauch)
+$sticker = New-Object System.Windows.Forms.PictureBox
+$sticker.Size = New-Object System.Drawing.Size(90, 90)
+$sticker.Location = New-Object System.Drawing.Point(180, 30) # Angepasst für 90x90 Pixel
+$sticker.SizeMode = "StretchImage"
+$stickerPath = Join-Path $PSScriptRoot "coffee_sticker.gif"
 try {
-    # Standard-GIF-URL: Cartoon-Charakter mit Kaffeetasse und animiertem Dampf (free-to-use von GIPHY)
-    $animation.Load("https://media.giphy.com/media/l2JhrYY3S51V7N71S/giphy.gif")
-    Write-Info "Standard-Animation geladen: Männchen mit Kaffeetasse und Dampf."
+    if (Test-Path $stickerPath) {
+        $sticker.Image = [System.Drawing.Image]::FromFile($stickerPath)
+        Write-Info "Sticker erfolgreich geladen: $stickerPath"
+    } else {
+        Write-Warn "Sticker-GIF nicht gefunden: $stickerPath. Bitte speichere 'coffee_sticker.gif' (90x90 Pixel, Männchen mit Kaffeetasse und Rauch) im Skript-Verzeichnis."
+    }
 } catch {
-    Write-Err "Fehler beim Laden der Standard-Animation: $_. Überprüfe die Internetverbindung oder ersetze die URL."
+    Write-Err "Fehler beim Laden des Stickers: $_"
 }
-$form.Controls.Add($animation)
+$form.Controls.Add($sticker)
 
 $form.Show()
 # ===================== Fortschritt berechnen =====================
