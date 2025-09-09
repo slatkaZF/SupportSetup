@@ -1,58 +1,3 @@
-
-
-
-
-
-Lernen Sie das neue plattformübergreifende PowerShell kennen – https://aka.ms/pscore6
-
-PS C:\WINDOWS\system32> cd C:\Supportsetup
-PS C:\Supportsetup> .\supportsetup.ps1 -config .\config.json
-In C:\Supportsetup\SupportSetup.ps1:95 Zeichen:88
-+ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
-+                                                       ~~~~~~~~~~~
-Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
-"${}", um den Namen zu begrenzen.
-    + CategoryInfo          : ParserError: (:) [], ParseException
-    + FullyQualifiedErrorId : InvalidVariableReferenceWithDrive
-
-PS C:\Supportsetup> .\supportsetup.ps1 -config .\config.json
-In C:\Supportsetup\SupportSetup.ps1:88 Zeichen:88
-+ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
-+                                                       ~~~~~~~~~~~
-Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
-"${}", um den Namen zu begrenzen.
-In C:\Supportsetup\SupportSetup.ps1:97 Zeichen:96
-+ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
-+                                                       ~~~~~~~~~~~
-Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
-"${}", um den Namen zu begrenzen.
-In C:\Supportsetup\SupportSetup.ps1:99 Zeichen:56
-+                 Write-Warn "Fehler beim Entsperren von $fileName: $_"
-+                                                        ~~~~~~~~~~
-Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
-"${}", um den Namen zu begrenzen.
-In C:\Supportsetup\SupportSetup.ps1:100 Zeichen:96
-+ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
-+                                                       ~~~~~~~~~~~
-Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
-"${}", um den Namen zu begrenzen.
-In C:\Supportsetup\SupportSetup.ps1:103 Zeichen:49
-+             Write-Err "Fehler beim Kopieren von $fileName: $_"
-+                                                 ~~~~~~~~~~
-Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
-"${}", um den Namen zu begrenzen.
-In C:\Supportsetup\SupportSetup.ps1:104 Zeichen:92
-+ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
-+                                                       ~~~~~~~~~~~
-Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
-"${}", um den Namen zu begrenzen.
-    + CategoryInfo          : ParserError: (:) [], ParseException
-
-
-
-
-
-
 Clear-Host # Konsole leeren für sauberen Start
 # ===================== Pfad zur Konfigurationsdatei =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
@@ -140,23 +85,23 @@ if ($cfg.jobs) {
         
         $currentJob++
         $percentComplete = [math]::Round(($currentJob / $totalJobs) * 100)
-        Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName" -PercentComplete $percentComplete
+        Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: ${fileName}" -PercentComplete $percentComplete
         
-        Write-Info "Kopiere $fileName nach $destination"
+        Write-Info "Kopiere ${fileName} nach $destination"
         try {
             Copy-Item -Path $source -Destination $destination -Force -ErrorAction Stop
-            Write-Info "Erfolg: $fileName kopiert."
+            Write-Info "Erfolg: ${fileName} kopiert."
             try {
                 Unblock-File -Path $destinationFile -ErrorAction Stop
-                Write-Info "Datei entsperrt: $destinationFile"
-                Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName erfolgreich" -PercentComplete $percentComplete
+                Write-Info "Datei entsperrt: ${fileName}"
+                Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: ${fileName} erfolgreich" -PercentComplete $percentComplete
             } catch {
-                Write-Warn "Fehler beim Entsperren von $fileName: $_"
-                Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName (Entsperren fehlgeschlagen)" -PercentComplete $percentComplete
+                Write-Warn "Fehler beim Entsperren von ${fileName}: $_"
+                Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: ${fileName} (Entsperren fehlgeschlagen)" -PercentComplete $percentComplete
             }
         } catch {
-            Write-Err "Fehler beim Kopieren von $fileName: $_"
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName (Kopieren fehlgeschlagen)" -PercentComplete $percentComplete
+            Write-Err "Fehler beim Kopieren von ${fileName}: $_"
+            Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: ${fileName} (Kopieren fehlgeschlagen)" -PercentComplete $percentComplete
         }
         Start-Sleep -Milliseconds 100 # Stabilisiert die Anzeige der Ladeleiste
     }
