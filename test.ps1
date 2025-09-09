@@ -82,18 +82,31 @@ if ($cfg.jobs) {
         # TODO: String Split
         $fileName = $lastPart
         $destinationFile = "$destination\$fileName" # Pfad der kopierten Datei, z. B. C:\02_Tools\ChromeStandaloneSetup64_26032025.exe
-        Write-Info "Kopiere $fileName nach $destination"
-        Copy-Item -Path $source -Destination $destination -Force
-        Write-Info "Erfolg: $fileName kopiert."
-       
-        # Datei entsperren
-        Unblock-File -Path $destinationFile
-        Write-Info "Datei entsperrt: $destinationFile"
         
         $currentJob++
         $percentComplete = [math]::Round(($currentJob / $totalJobs) * 100)
         Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName" -PercentComplete $percentComplete
+        
+        Write-Info "Kopiere $fileName nach $destination"
+        try {
+            Copy-Item -Path $source -Destination $destination -Force -ErrorAction Stop
+            Write-Info "Erfolg: $fileName kopiert."
+            try {
+                Unblock-File -Path $destinationFile -ErrorAction Stop
+                Write-Info "Datei entsperrt: $destinationFile"
+                Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName erfolgreich" -PercentComplete $percentComplete
+            } catch {
+                Write-Warn "Fehler beim Entsperren von $fileName: $_"
+                Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName (Entsperren fehlgeschlagen)" -PercentComplete $percentComplete
+            }
+        } catch {
+            Write-Err "Fehler beim Kopieren von $fileName: $_"
+            Write-Progress -Activity "Dateien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileName (Kopieren fehlgeschlagen)" -PercentComplete $percentComplete
+        }
+        Start-Sleep -Milliseconds 100 # Stabilisiert die Anzeige der Ladeleiste
     }
+    Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -PercentComplete 100
+    Start-Sleep -Milliseconds 500 # Kurze Pause, damit die 100% sichtbar sind
     Write-Progress -Activity "Dateien werden kopiert" -Completed
 }
 # ===================== Cleanup =====================
