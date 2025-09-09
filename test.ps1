@@ -1,3 +1,58 @@
+
+
+
+
+
+Lernen Sie das neue plattformübergreifende PowerShell kennen – https://aka.ms/pscore6
+
+PS C:\WINDOWS\system32> cd C:\Supportsetup
+PS C:\Supportsetup> .\supportsetup.ps1 -config .\config.json
+In C:\Supportsetup\SupportSetup.ps1:95 Zeichen:88
++ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
++                                                       ~~~~~~~~~~~
+Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
+"${}", um den Namen zu begrenzen.
+    + CategoryInfo          : ParserError: (:) [], ParseException
+    + FullyQualifiedErrorId : InvalidVariableReferenceWithDrive
+
+PS C:\Supportsetup> .\supportsetup.ps1 -config .\config.json
+In C:\Supportsetup\SupportSetup.ps1:88 Zeichen:88
++ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
++                                                       ~~~~~~~~~~~
+Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
+"${}", um den Namen zu begrenzen.
+In C:\Supportsetup\SupportSetup.ps1:97 Zeichen:96
++ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
++                                                       ~~~~~~~~~~~
+Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
+"${}", um den Namen zu begrenzen.
+In C:\Supportsetup\SupportSetup.ps1:99 Zeichen:56
++                 Write-Warn "Fehler beim Entsperren von $fileName: $_"
++                                                        ~~~~~~~~~~
+Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
+"${}", um den Namen zu begrenzen.
+In C:\Supportsetup\SupportSetup.ps1:100 Zeichen:96
++ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
++                                                       ~~~~~~~~~~~
+Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
+"${}", um den Namen zu begrenzen.
+In C:\Supportsetup\SupportSetup.ps1:103 Zeichen:49
++             Write-Err "Fehler beim Kopieren von $fileName: $_"
++                                                 ~~~~~~~~~~
+Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
+"${}", um den Namen zu begrenzen.
+In C:\Supportsetup\SupportSetup.ps1:104 Zeichen:92
++ ... eien werden kopiert" -Status "Job $currentJob von $totalJobs: $fileNa ...
++                                                       ~~~~~~~~~~~
+Ungültiger Variablenverweis. Nach ":" folgte kein Zeichen, das für einen Variablennamen gültig ist. Verwenden Sie ggf.
+"${}", um den Namen zu begrenzen.
+    + CategoryInfo          : ParserError: (:) [], ParseException
+
+
+
+
+
+
 Clear-Host # Konsole leeren für sauberen Start
 # ===================== Pfad zur Konfigurationsdatei =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
