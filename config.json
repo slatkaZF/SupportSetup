@@ -4,6 +4,7 @@
   "features": {
     "createFolders": true,
     "createSupportUser": true,
+    "createNormalUser": true,
     "enableTranscriptLogging": true
   },
   "folderProvisioning": {
@@ -23,7 +24,13 @@
   "localSupportAccount": {
     "username": "Support",
     "password": "Adm_Supp0rt",
-    "description": "Support-Admin fuer Wartung",
+    "description": "Support-Admin for maintenance",
+    "addToAdministratorsGroup": true
+  },
+  "UserAccount": {
+    "username": "NormalUser",
+    "password": "Adm_Supp0rt",
+    "description": "Normaler Nutzer",
     "addToAdministratorsGroup": true
   },
   "systemSecuritySettings": {
@@ -36,11 +43,6 @@
   },
 
   "jobs": [
-    {
-      "Source": "\\\\emea.zf-world.com\\sCW\\INDUST~1\\OG-EAN~3\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Chrome\\ChromeStandaloneSetup64_26032025.exe",
-      "Target": "C:\\02_Tools\\",
-      "LogFile": "$PSScriptRoot\\log_chrome_{timestamp}.txt"
-    },
     {
       "Source": "\\\\emea.zf-world.com\\sCW\\INDUST~1\\OG-EAN~3\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Chrome\\ChromeStandaloneSetup64_26032025.exe",
       "Target": "C:\\02_Tools\\",
