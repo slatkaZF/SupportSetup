@@ -1,5 +1,99 @@
-cd C:\SupportSetup dir
+Clear-Host
+$ConfigPath = Join-Path $PSScriptRoot "config.json"
 
-Unblock-File -Path "C:\SupportSetup\SupportSetup.ps1"
+# Simple logging functions
+function Write-Info { Write-Host "[INFO] $args" }
+function Write-Warn { Write-Host "[WARN] $args" -ForegroundColor Yellow }
+function Write-Err { Write-Host "[ERROR] $args" -ForegroundColor Red }
 
-.\SupportSetup.ps1 -config .\config.json
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
+    Write-Err "Please run this script with administrative privileges."
+    exit 1
+}
+
+if (-not (Test-Path $ConfigPath)) {
+    Write-Err "Configuration file not found: $ConfigPath"
+    exit 1
+}
+
+$cfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+$root = $cfg.root
+Write-Info "Root directory: $root"
+
+if ($cfg.features.enableTranscriptLogging) {
+    $logDir = $PSScriptRoot
+    $logFile = $cfg.logging.fileNamePattern -replace "\{timestamp\}", (Get-Date -Format "yyyyMMdd_HHmmss")
+    $transcriptPath = Join-Path $logDir $logFile
+    Start-Transcript -Path $transcriptPath -Force | Out-Null
+    Write-Info "Transcript started: $transcriptPath"
+}
+
+# Create folders
+if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories) {
+    Write-Info "Creating project folders..."
+    foreach ($dir in $cfg.folderProvisioning.projectDirectories) {
+        $path = $dir.Replace("{root}", $root)
+        $path = [Environment]::ExpandEnvironmentVariables($path)
+        if (-not (Test-Path $path)) {
+            New-Item -ItemType Directory -Path $path -Force | Out-Null
+            Write-Info "Directory created: $path"
+        }
+    }
+    Write-Info "All folders created."
+}
+
+$registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
+$registryName = "LocalAccountTokenFilterPolicy"
+$registryValue = 1
+$password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
+$params = @{
+    Name        = 'Support'
+    Password    = $password
+    Description = 'Support User for administration'
+}
+
+# Create local support account
+New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires
+Add-LocalGroupMember -Group "Administrators" -Member "Support"
+
+# Copy and unblock files
+if ($cfg.jobs) {
+    $totalJobs = $cfg.jobs.Count
+    $currentJob = 0
+
+    foreach ($job in $cfg.jobs) {
+        $currentJob++
+        $percentComplete = ($currentJob / $totalJobs) * 100
+        Write-Progress -Activity "Copying files" -Status "Processing job $currentJob of $totalJobs" -PercentComplete $percentComplete
+
+        $source = $job.Source.Replace("{root}", $root)
+        $destination = $job.Target.Replace("{root}", $root)
+        $splitArray = $source.Split("\")
+        $fileName = $splitArray[-1]
+        $destinationFile = Join-Path $destination $fileName
+
+        Write-Info "Copying $fileName to $destination"
+        try {
+            Copy-Item -Path $source -Destination $destination -Force -ErrorAction Stop
+            Write-Info "Success: $fileName copied."
+        } catch {
+            Write-Err "Error copying $fileName: $_"
+        }
+
+        try {
+            Unblock-File -Path $destinationFile -ErrorAction Stop
+            Write-Info "File unblocked: $destinationFile"
+        } catch {
+            Write-Err "Error unblocking $destinationFile: $_"
+        }
+
+        Start-Sleep -Milliseconds 100
+    }
+
+    Write-Progress -Activity "Copying files" -Status "Completed" -Completed
+}
+
+if ($cfg.features.enableTranscriptLogging) {
+    Stop-Transcript | Out-Null
+}
+Write-Info "Script completed."
