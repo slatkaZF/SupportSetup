@@ -69,64 +69,85 @@ function Create-LocalUserAccount {
 function New-UserWithGUI {
     param ([PSCustomObject]$Config)
     Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
     do {
         $form = New-Object System.Windows.Forms.Form
         $form.Text = "Create User"
         $form.Size = New-Object System.Drawing.Size(350, 250)
         $form.StartPosition = "CenterScreen"
-        $form.BackColor = [System.Drawing.Color]::LightGray
         $form.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+        # Set linear gradient background (ZF Blau to ZF Schwarzblau)
+        $form.Add_Paint({
+            $rect = $form.ClientRectangle
+            $gradientBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+                $rect,
+                [System.Drawing.Color]::FromArgb(0, 87, 183), # ZF Blau
+                [System.Drawing.Color]::FromArgb(0, 8, 40),   # ZF Schwarzblau
+                90 # Vertical gradient
+            )
+            $_.Graphics.FillRectangle($gradientBrush, $rect)
+            $gradientBrush.Dispose()
+        })
         $labelUsername = New-Object System.Windows.Forms.Label
         $labelUsername.Text = "Username:"
         $labelUsername.Location = New-Object System.Drawing.Point(20, 20)
         $labelUsername.Size = New-Object System.Drawing.Size(80, 20)
+        $labelUsername.ForeColor = [System.Drawing.Color]::White
         $form.Controls.Add($labelUsername)
         $textBoxUsername = New-Object System.Windows.Forms.TextBox
         $textBoxUsername.Location = New-Object System.Drawing.Point(100, 20)
         $textBoxUsername.Size = New-Object System.Drawing.Size(200, 25)
         $textBoxUsername.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
-        $textBoxUsername.BackColor = [System.Drawing.Color]::White
+        $textBoxUsername.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxUsername.ForeColor = [System.Drawing.Color]::Black
         $form.Controls.Add($textBoxUsername)
         $labelPassword = New-Object System.Windows.Forms.Label
         $labelPassword.Text = "Password:"
         $labelPassword.Location = New-Object System.Drawing.Point(20, 50)
         $labelPassword.Size = New-Object System.Drawing.Size(80, 20)
+        $labelPassword.ForeColor = [System.Drawing.Color]::White
         $form.Controls.Add($labelPassword)
         $textBoxPassword = New-Object System.Windows.Forms.TextBox
         $textBoxPassword.Location = New-Object System.Drawing.Point(100, 50)
         $textBoxPassword.Size = New-Object System.Drawing.Size(200, 25)
         $textBoxPassword.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
         $textBoxPassword.UseSystemPasswordChar = $true
-        $textBoxPassword.BackColor = [System.Drawing.Color]::White
+        $textBoxPassword.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxPassword.ForeColor = [System.Drawing.Color]::Black
         $form.Controls.Add($textBoxPassword)
         $labelDescription = New-Object System.Windows.Forms.Label
         $labelDescription.Text = "Description:"
         $labelDescription.Location = New-Object System.Drawing.Point(20, 80)
         $labelDescription.Size = New-Object System.Drawing.Size(80, 20)
+        $labelDescription.ForeColor = [System.Drawing.Color]::White
         $form.Controls.Add($labelDescription)
         $textBoxDescription = New-Object System.Windows.Forms.TextBox
         $textBoxDescription.Location = New-Object System.Drawing.Point(100, 80)
         $textBoxDescription.Size = New-Object System.Drawing.Size(200, 25)
         $textBoxDescription.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
-        $textBoxDescription.BackColor = [System.Drawing.Color]::White
+        $textBoxDescription.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxDescription.ForeColor = [System.Drawing.Color]::Black
         $form.Controls.Add($textBoxDescription)
         $checkBoxAdmin = New-Object System.Windows.Forms.CheckBox
         $checkBoxAdmin.Text = "Admin"
         $checkBoxAdmin.Location = New-Object System.Drawing.Point(100, 110)
         $checkBoxAdmin.Size = New-Object System.Drawing.Size(100, 25)
+        $checkBoxAdmin.ForeColor = [System.Drawing.Color]::White
         $form.Controls.Add($checkBoxAdmin)
         $buttonOK = New-Object System.Windows.Forms.Button
         $buttonOK.Text = "OK"
         $buttonOK.Location = New-Object System.Drawing.Point(100, 150)
         $buttonOK.Size = New-Object System.Drawing.Size(80, 30)
-        $buttonOK.BackColor = [System.Drawing.Color]::LightBlue
+        $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183) # ZF Blau
+        $buttonOK.ForeColor = [System.Drawing.Color]::White
         $buttonOK.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
         $form.Controls.Add($buttonOK)
         $buttonCancel = New-Object System.Windows.Forms.Button
         $buttonCancel.Text = "Cancel"
         $buttonCancel.Location = New-Object System.Drawing.Point(200, 150)
         $buttonCancel.Size = New-Object System.Drawing.Size(80, 30)
-        $buttonCancel.BackColor = [System.Drawing.Color]::LightCoral
+        $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(0, 8, 40) # ZF Schwarzblau
+        $buttonCancel.ForeColor = [System.Drawing.Color]::White
         $buttonCancel.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
         $form.Controls.Add($buttonCancel)
         $buttonOK.Add_Click({
