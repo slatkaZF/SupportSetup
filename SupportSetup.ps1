@@ -18,6 +18,9 @@ function Get-LocalGroupName {
         if ($GroupType -eq "Administrators") { return "Administrators" }
     }
 }
+# ===================== Cache group names =====================
+$UsersGroup = Get-LocalGroupName -GroupType "Users"
+$AdminsGroup = Get-LocalGroupName -GroupType "Administrators"
 # ===================== Check for admin rights =====================
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
     Write-Err "Please run this script with administrative privileges."
@@ -39,70 +42,122 @@ if ($cfg.features.enableTranscriptLogging) {
     Start-Transcript -Path $transcriptPath -Force | Out-Null
     Write-Info "Transcript started: $transcriptPath"
 }
+# ===================== Centralized function to create local user =====================
+function Create-LocalUserAccount {
+    param (
+        [string]$Username,
+        [SecureString]$Password,
+        [string]$Description,
+        [bool]$IsAdmin = $false
+    )
+    try {
+        New-LocalUser -Name $Username -Password $Password -Description $Description -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
+        Write-Info "User $Username successfully created"
+        Add-LocalGroupMember -Group $UsersGroup -Member $Username -ErrorAction Stop
+        Write-Info "User $Username added to $UsersGroup"
+        if ($IsAdmin) {
+            Add-LocalGroupMember -Group $AdminsGroup -Member $Username -ErrorAction Stop
+            Write-Info "User $Username added to $AdminsGroup"
+        }
+    }
+    catch {
+        Write-Err "Failed to create user $Username - $_"
+        throw
+    }
+}
 # ===================== Function to create user with GUI =====================
 function New-UserWithGUI {
     param ([PSCustomObject]$Config)
     Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
     do {
         $form = New-Object System.Windows.Forms.Form
         $form.Text = "Create User"
-        $form.Size = New-Object System.Drawing.Size(350, 250)
+        $form.Size = New-Object System.Drawing.Size(420, 320)
         $form.StartPosition = "CenterScreen"
-        $form.BackColor = [System.Drawing.Color]::LightGray
-        $form.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+        $form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+        # Set linear gradient background (ZF Blau to ZF Schwarzblau)
+        $form.Add_Paint({
+                $rect = $form.ClientRectangle
+                $gradientBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+                    $rect,
+                    [System.Drawing.Color]::FromArgb(0, 87, 183), # ZF Blau
+                    [System.Drawing.Color]::FromArgb(0, 8, 40),   # ZF Schwarzblau
+                    90 # Vertical gradient
+                )
+                $_.Graphics.FillRectangle($gradientBrush, $rect)
+                $gradientBrush.Dispose()
+            })
         $labelUsername = New-Object System.Windows.Forms.Label
         $labelUsername.Text = "Username:"
-        $labelUsername.Location = New-Object System.Drawing.Point(20, 20)
-        $labelUsername.Size = New-Object System.Drawing.Size(80, 20)
+        $labelUsername.Location = New-Object System.Drawing.Point(20, 30)
+        $labelUsername.Size = New-Object System.Drawing.Size(100, 25)
+        $labelUsername.ForeColor = [System.Drawing.Color]::DarkBlue
         $form.Controls.Add($labelUsername)
         $textBoxUsername = New-Object System.Windows.Forms.TextBox
-        $textBoxUsername.Location = New-Object System.Drawing.Point(100, 20)
-        $textBoxUsername.Size = New-Object System.Drawing.Size(200, 25)
+        $textBoxUsername.Location = New-Object System.Drawing.Point(120, 30)
+        $textBoxUsername.Size = New-Object System.Drawing.Size(260, 35)
         $textBoxUsername.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
-        $textBoxUsername.BackColor = [System.Drawing.Color]::White
+        $textBoxUsername.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxUsername.ForeColor = [System.Drawing.Color]::Black
         $form.Controls.Add($textBoxUsername)
         $labelPassword = New-Object System.Windows.Forms.Label
         $labelPassword.Text = "Password:"
-        $labelPassword.Location = New-Object System.Drawing.Point(20, 50)
-        $labelPassword.Size = New-Object System.Drawing.Size(80, 20)
+        $labelPassword.Location = New-Object System.Drawing.Point(20, 75)
+        $labelPassword.Size = New-Object System.Drawing.Size(100, 25)
+        $labelPassword.ForeColor = [System.Drawing.Color]::DarkBlue
         $form.Controls.Add($labelPassword)
         $textBoxPassword = New-Object System.Windows.Forms.TextBox
-        $textBoxPassword.Location = New-Object System.Drawing.Point(100, 50)
-        $textBoxPassword.Size = New-Object System.Drawing.Size(200, 25)
+        $textBoxPassword.Location = New-Object System.Drawing.Point(120, 75)
+        $textBoxPassword.Size = New-Object System.Drawing.Size(260, 35)
         $textBoxPassword.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
         $textBoxPassword.UseSystemPasswordChar = $true
-        $textBoxPassword.BackColor = [System.Drawing.Color]::White
+        $textBoxPassword.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxPassword.ForeColor = [System.Drawing.Color]::Black
         $form.Controls.Add($textBoxPassword)
         $labelDescription = New-Object System.Windows.Forms.Label
         $labelDescription.Text = "Description:"
-        $labelDescription.Location = New-Object System.Drawing.Point(20, 80)
-        $labelDescription.Size = New-Object System.Drawing.Size(80, 20)
+        $labelDescription.Location = New-Object System.Drawing.Point(20, 120)
+        $labelDescription.Size = New-Object System.Drawing.Size(100, 25)
+        $labelDescription.ForeColor = [System.Drawing.Color]::DarkBlue
         $form.Controls.Add($labelDescription)
         $textBoxDescription = New-Object System.Windows.Forms.TextBox
-        $textBoxDescription.Location = New-Object System.Drawing.Point(100, 80)
-        $textBoxDescription.Size = New-Object System.Drawing.Size(200, 25)
+        $textBoxDescription.Location = New-Object System.Drawing.Point(120, 120)
+        $textBoxDescription.Size = New-Object System.Drawing.Size(260, 35)
         $textBoxDescription.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
-        $textBoxDescription.BackColor = [System.Drawing.Color]::White
+        $textBoxDescription.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxDescription.ForeColor = [System.Drawing.Color]::Black
         $form.Controls.Add($textBoxDescription)
         $checkBoxAdmin = New-Object System.Windows.Forms.CheckBox
         $checkBoxAdmin.Text = "Admin"
-        $checkBoxAdmin.Location = New-Object System.Drawing.Point(100, 110)
-        $checkBoxAdmin.Size = New-Object System.Drawing.Size(100, 25)
+        $checkBoxAdmin.Location = New-Object System.Drawing.Point(120, 165)
+        $checkBoxAdmin.Size = New-Object System.Drawing.Size(120, 30)
+        $checkBoxAdmin.ForeColor = [System.Drawing.Color]::DarkBlue
         $form.Controls.Add($checkBoxAdmin)
         $buttonOK = New-Object System.Windows.Forms.Button
         $buttonOK.Text = "OK"
-        $buttonOK.Location = New-Object System.Drawing.Point(100, 150)
-        $buttonOK.Size = New-Object System.Drawing.Size(80, 30)
-        $buttonOK.BackColor = [System.Drawing.Color]::LightBlue
+        $buttonOK.Location = New-Object System.Drawing.Point(120, 205)
+        $buttonOK.Size = New-Object System.Drawing.Size(110, 45)
+        $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 128, 128) # Teal
+        $buttonOK.ForeColor = [System.Drawing.Color]::White
         $buttonOK.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+        $buttonOK.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
         $form.Controls.Add($buttonOK)
+        # Add hover effect for OK button
+        $buttonOK.Add_MouseEnter({ $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 150) })
+        $buttonOK.Add_MouseLeave({ $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 128, 128) })
         $buttonCancel = New-Object System.Windows.Forms.Button
         $buttonCancel.Text = "Cancel"
-        $buttonCancel.Location = New-Object System.Drawing.Point(200, 150)
-        $buttonCancel.Size = New-Object System.Drawing.Size(80, 30)
-        $buttonCancel.BackColor = [System.Drawing.Color]::LightCoral
+        $buttonCancel.Location = New-Object System.Drawing.Point(240, 205)
+        $buttonCancel.Size = New-Object System.Drawing.Size(110, 45)
+        $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105) # DimGray
+        $buttonCancel.ForeColor = [System.Drawing.Color]::White
         $buttonCancel.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+        $buttonCancel.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
         $form.Controls.Add($buttonCancel)
+        # Add hover effect for Cancel button
+        $buttonCancel.Add_MouseEnter({ $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(125, 125, 125) })
+        $buttonCancel.Add_MouseLeave({ $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105) })
         $buttonOK.Add_Click({
                 if ($textBoxUsername.Text -eq "" -or $textBoxPassword.Text -eq "") {
                     [System.Windows.Forms.MessageBox]::Show("Enter username and password!", "Error")
@@ -110,27 +165,10 @@ function New-UserWithGUI {
                 else {
                     try {
                         $password = ConvertTo-SecureString $textBoxPassword.Text -AsPlainText -Force
-                        New-LocalUser -Name $textBoxUsername.Text -Password $password -Description $textBoxDescription.Text -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
-                        $usersGroup = Get-LocalGroupName -GroupType "Users"
-                        $adminsGroup = Get-LocalGroupName -GroupType "Administrators"
-                        if (Get-LocalUser -Name $textBoxUsername.Text -ErrorAction SilentlyContinue) {
-                            Write-Info "User $($textBoxUsername.Text) successfully created"
-                            Add-LocalGroupMember -Group $usersGroup -Member $textBoxUsername.Text -ErrorAction Stop
-                            Write-Info "User $($textBoxUsername.Text) added to $usersGroup"
-                            if ($checkBoxAdmin.Checked) {
-                                try {
-                                    Add-LocalGroupMember -Group $adminsGroup -Member $textBoxUsername.Text -ErrorAction Stop
-                                    Write-Info "User $($textBoxUsername.Text) added to $adminsGroup"
-                                }
-                                catch {
-                                    Write-Err "Failed to add user $($textBoxUsername.Text) to $adminsGroup - $_"
-                                }
-                            }
-                        }
+                        Create-LocalUserAccount -Username $textBoxUsername.Text -Password $password -Description $textBoxDescription.Text -IsAdmin $checkBoxAdmin.Checked
                         $form.Close()
                     }
                     catch {
-                        Write-Err "Failed to create user $($textBoxUsername.Text) - $_"
                         [System.Windows.Forms.MessageBox]::Show("Failed to create user: $_", "Error")
                     }
                 }
@@ -153,23 +191,7 @@ catch {
 }
 try {
     $password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
-    $params = @{
-        Name        = 'Support'
-        Password    = $password
-        Description = 'Support User for administration'
-    }
-    New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
-    if (Get-LocalUser -Name 'Support' -ErrorAction SilentlyContinue) {
-        Write-Info "Support user successfully created"
-        try {
-            $adminsGroup = Get-LocalGroupName -GroupType "Administrators"
-            Add-LocalGroupMember -Group $adminsGroup -Member "Support" -ErrorAction Stop
-            Write-Info "Support user Support added to $adminsGroup"
-        }
-        catch {
-            Write-Err "Failed to add support user Support to $adminsGroup - $_"
-        }
-    }
+    Create-LocalUserAccount -Username 'Support' -Password $password -Description 'Support User for administration' -IsAdmin $true
 }
 catch {
     Write-Err "Failed to create Support user - $_"
@@ -184,14 +206,12 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
     foreach ($dir in $cfg.folderProvisioning.projectDirectories) {
         $path = $dir.Replace("{root}", $root)
         $path = [Environment]::ExpandEnvironmentVariables($path)
-        if (-not (Test-Path $path)) {
-            try {
-                New-Item -ItemType Directory -Path $path -Force -ErrorAction Stop | Out-Null
-                Write-Info "Verzeichnis erstellt: $path"
-            }
-            catch {
-                Write-Err "Failed to create directory $path - $_"
-            }
+        try {
+            New-Item -ItemType Directory -Path $path -Force -ErrorAction Stop | Out-Null
+            Write-Info "Verzeichnis erstellt: $path"
+        }
+        catch {
+            Write-Err "Failed to create directory $path - $_"
         }
     }
     Write-Info "Alle Ordner erstellt."
@@ -214,12 +234,10 @@ if ($cfg.jobs) {
         # Prüfen, ob Quelldatei und Zielverzeichnis existieren
         $destinationDir = Split-Path $destinationFile -Parent
         if (-not (Test-Path $source)) {
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             Write-Err "Source file does not exist: $source"
             continue
         }
         if (-not (Test-Path $destinationDir)) {
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             Write-Err "Destination directory does not exist: $destinationDir"
             continue
         }
@@ -227,8 +245,6 @@ if ($cfg.jobs) {
         try {
             Copy-Item -Path $source -Destination $destination -Force -ErrorAction Stop
             Write-Info "Erfolg: $fileName kopiert."
-            # Ladeleiste kurz schließen, um Fehlermeldungen sichtbar zu machen
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             try {
                 Unblock-File -Path $destinationFile -ErrorAction Stop
                 Write-Info "Datei entsperrt: $destinationFile"
@@ -238,7 +254,6 @@ if ($cfg.jobs) {
             }
         }
         catch {
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             Write-Err "Failed to copy file $fileName - $_"
         }
         # Optional: Kleine Pause für sichtbaren Fortschritt (entfernen in Produktion, wenn nicht nötig)
