@@ -18,6 +18,9 @@ function Get-LocalGroupName {
         if ($GroupType -eq "Administrators") { return "Administrators" }
     }
 }
+# ===================== Cache group names =====================
+$UsersGroup = Get-LocalGroupName -GroupType "Users"
+$AdminsGroup = Get-LocalGroupName -GroupType "Administrators"
 # ===================== Check for admin rights =====================
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
     Write-Err "Please run this script with administrative privileges."
@@ -38,6 +41,29 @@ if ($cfg.features.enableTranscriptLogging) {
     $transcriptPath = Join-Path $logDir $logFile
     Start-Transcript -Path $transcriptPath -Force | Out-Null
     Write-Info "Transcript started: $transcriptPath"
+}
+# ===================== Centralized function to create local user =====================
+function Create-LocalUserAccount {
+    param (
+        [string]$Username,
+        [SecureString]$Password,
+        [string]$Description,
+        [bool]$IsAdmin = $false
+    )
+    try {
+        New-LocalUser -Name $Username -Password $Password -Description $Description -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
+        Write-Info "User $Username successfully created"
+        Add-LocalGroupMember -Group $UsersGroup -Member $Username -ErrorAction Stop
+        Write-Info "User $Username added to $UsersGroup"
+        if ($IsAdmin) {
+            Add-LocalGroupMember -Group $AdminsGroup -Member $Username -ErrorAction Stop
+            Write-Info "User $Username added to $AdminsGroup"
+        }
+    }
+    catch {
+        Write-Err "Failed to create user $Username - $_"
+        throw
+    }
 }
 # ===================== Function to create user with GUI =====================
 function New-UserWithGUI {
@@ -110,27 +136,10 @@ function New-UserWithGUI {
                 else {
                     try {
                         $password = ConvertTo-SecureString $textBoxPassword.Text -AsPlainText -Force
-                        New-LocalUser -Name $textBoxUsername.Text -Password $password -Description $textBoxDescription.Text -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
-                        $usersGroup = Get-LocalGroupName -GroupType "Users"
-                        $adminsGroup = Get-LocalGroupName -GroupType "Administrators"
-                        if (Get-LocalUser -Name $textBoxUsername.Text -ErrorAction SilentlyContinue) {
-                            Write-Info "User $($textBoxUsername.Text) successfully created"
-                            Add-LocalGroupMember -Group $usersGroup -Member $textBoxUsername.Text -ErrorAction Stop
-                            Write-Info "User $($textBoxUsername.Text) added to $usersGroup"
-                            if ($checkBoxAdmin.Checked) {
-                                try {
-                                    Add-LocalGroupMember -Group $adminsGroup -Member $textBoxUsername.Text -ErrorAction Stop
-                                    Write-Info "User $($textBoxUsername.Text) added to $adminsGroup"
-                                }
-                                catch {
-                                    Write-Err "Failed to add user $($textBoxUsername.Text) to $adminsGroup - $_"
-                                }
-                            }
-                        }
+                        Create-LocalUserAccount -Username $textBoxUsername.Text -Password $password -Description $textBoxDescription.Text -IsAdmin $checkBoxAdmin.Checked
                         $form.Close()
                     }
                     catch {
-                        Write-Err "Failed to create user $($textBoxUsername.Text) - $_"
                         [System.Windows.Forms.MessageBox]::Show("Failed to create user: $_", "Error")
                     }
                 }
@@ -153,23 +162,7 @@ catch {
 }
 try {
     $password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
-    $params = @{
-        Name        = 'Support'
-        Password    = $password
-        Description = 'Support User for administration'
-    }
-    New-LocalUser @params -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
-    if (Get-LocalUser -Name 'Support' -ErrorAction SilentlyContinue) {
-        Write-Info "Support user successfully created"
-        try {
-            $adminsGroup = Get-LocalGroupName -GroupType "Administrators"
-            Add-LocalGroupMember -Group $adminsGroup -Member "Support" -ErrorAction Stop
-            Write-Info "Support user Support added to $adminsGroup"
-        }
-        catch {
-            Write-Err "Failed to add support user Support to $adminsGroup - $_"
-        }
-    }
+    Create-LocalUserAccount -Username 'Support' -Password $password -Description 'Support User for administration' -IsAdmin $true
 }
 catch {
     Write-Err "Failed to create Support user - $_"
@@ -184,14 +177,12 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
     foreach ($dir in $cfg.folderProvisioning.projectDirectories) {
         $path = $dir.Replace("{root}", $root)
         $path = [Environment]::ExpandEnvironmentVariables($path)
-        if (-not (Test-Path $path)) {
-            try {
-                New-Item -ItemType Directory -Path $path -Force -ErrorAction Stop | Out-Null
-                Write-Info "Verzeichnis erstellt: $path"
-            }
-            catch {
-                Write-Err "Failed to create directory $path - $_"
-            }
+        try {
+            New-Item -ItemType Directory -Path $path -Force -ErrorAction Stop | Out-Null
+            Write-Info "Verzeichnis erstellt: $path"
+        }
+        catch {
+            Write-Err "Failed to create directory $path - $_"
         }
     }
     Write-Info "Alle Ordner erstellt."
@@ -214,12 +205,10 @@ if ($cfg.jobs) {
         # Prüfen, ob Quelldatei und Zielverzeichnis existieren
         $destinationDir = Split-Path $destinationFile -Parent
         if (-not (Test-Path $source)) {
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             Write-Err "Source file does not exist: $source"
             continue
         }
         if (-not (Test-Path $destinationDir)) {
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             Write-Err "Destination directory does not exist: $destinationDir"
             continue
         }
@@ -227,8 +216,6 @@ if ($cfg.jobs) {
         try {
             Copy-Item -Path $source -Destination $destination -Force -ErrorAction Stop
             Write-Info "Erfolg: $fileName kopiert."
-            # Ladeleiste kurz schließen, um Fehlermeldungen sichtbar zu machen
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             try {
                 Unblock-File -Path $destinationFile -ErrorAction Stop
                 Write-Info "Datei entsperrt: $destinationFile"
@@ -238,7 +225,6 @@ if ($cfg.jobs) {
             }
         }
         catch {
-            Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
             Write-Err "Failed to copy file $fileName - $_"
         }
         # Optional: Kleine Pause für sichtbaren Fortschritt (entfernen in Produktion, wenn nicht nötig)
