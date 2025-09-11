@@ -1,10 +1,18 @@
 Clear-Host # Clear console for clean start
-# ===================== Path to configuration file =====================
-$ConfigPath = Join-Path $PSScriptRoot "config.json"
+# Entsperre das aktuelle Skript, falls es blockiert ist
+$scriptPath = $PSCommandPath
+if (Test-Path $scriptPath) {
+    Unblock-File -Path $scriptPath -ErrorAction SilentlyContinue
+}
+
 # ===================== Simple logging functions =====================
 function Write-Info { Write-Host "[INFO] $args" }
 function Write-Warn { Write-Host "[WARN] $args" -ForegroundColor Yellow }
 function Write-Err { Write-Host "[ERROR] $args" -ForegroundColor Red }
+
+# ===================== Path to configuration file =====================
+$ConfigPath = Join-Path $PSScriptRoot "config.json"
+# ... (Rest des Skripts folgt)
 # ===================== Function to get localized group names =====================
 function Get-LocalGroupName {
     param ([string]$GroupType)
