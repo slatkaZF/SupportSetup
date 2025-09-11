@@ -65,6 +65,7 @@ function Create-LocalUserAccount {
         throw
     }
 }
+
 # ===================== Function to create user with GUI =====================
 function New-UserWithGUI {
     param ([PSCustomObject]$Config)
@@ -73,91 +74,186 @@ function New-UserWithGUI {
     do {
         $form = New-Object System.Windows.Forms.Form
         $form.Text = "Create User"
-        $form.Size = New-Object System.Drawing.Size(420, 320)
-        $form.StartPosition = "CenterScreen"
-        $form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
-        # Set linear gradient background (ZF Blau to ZF Schwarzblau)
+        $form.Size = New-Object System.Drawing.Size(480, 400)
+        $form.StartPosition = "WindowsDefaultLocation"
+        $form.Font = New-Object System.Drawing.Font("Segoe UI", 11)
+        $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
+        $form.Icon = New-Object System.Drawing.Icon("C:\supportSetup\zf.ico")
+        $form.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183) # ZF Blau as fallback
+        # Smooth gradient background
         $form.Add_Paint({
                 $rect = $form.ClientRectangle
                 $gradientBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
                     $rect,
                     [System.Drawing.Color]::FromArgb(0, 87, 183), # ZF Blau
-                    [System.Drawing.Color]::FromArgb(0, 8, 40),   # ZF Schwarzblau
+                    [System.Drawing.Color]::FromArgb(0, 15, 50),  # Softer ZF Schwarzblau
                     90 # Vertical gradient
                 )
                 $_.Graphics.FillRectangle($gradientBrush, $rect)
                 $gradientBrush.Dispose()
             })
+        # Smooth fade-in effect
+        $form.Opacity = 0
+        $form.Add_Shown({
+                $opacity = 0
+                while ($opacity -lt 1) {
+                    $form.Opacity = $opacity
+                    $opacity += 0.05
+                    Start-Sleep -Milliseconds 50
+                }
+                $form.Opacity = 1
+            })
+        #$labelTitle = New-Object System.Windows.Forms.Label
+        #$labelTitle.Text = "Create User"
+        #$labelTitle.BackColor = [System.Drawing.Color]::Transparent
+        #$labelTitle.Location = New-Object System.Drawing.Point(37, 10)
+        #$labelTitle.Size = New-Object System.Drawing.Size(440, 30)
+        #$labelTitle.ForeColor = [System.Drawing.Color]::FromArgb(0, 15, 50)
+        #$labelTitle.Font = New-Object System.Drawing.Font("Segoe UI", 16, [System.Drawing.FontStyle]::Bold)
+        #$labelTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+        #$form.Controls.Add($labelTitle)
         $labelUsername = New-Object System.Windows.Forms.Label
         $labelUsername.Text = "Username:"
-        $labelUsername.Location = New-Object System.Drawing.Point(20, 30)
-        $labelUsername.Size = New-Object System.Drawing.Size(100, 25)
-        $labelUsername.ForeColor = [System.Drawing.Color]::DarkBlue
+        $labelUsername.BackColor = [System.Drawing.Color]::Transparent
+        $labelUsername.Location = New-Object System.Drawing.Point(20, 50)
+        $labelUsername.Size = New-Object System.Drawing.Size(130, 30)
+        $labelUsername.ForeColor = [System.Drawing.Color]::WhiteSmoke
+        $labelUsername.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
         $form.Controls.Add($labelUsername)
         $textBoxUsername = New-Object System.Windows.Forms.TextBox
-        $textBoxUsername.Location = New-Object System.Drawing.Point(120, 30)
-        $textBoxUsername.Size = New-Object System.Drawing.Size(260, 35)
-        $textBoxUsername.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
-        $textBoxUsername.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxUsername.Location = New-Object System.Drawing.Point(160, 50)
+        $textBoxUsername.Size = New-Object System.Drawing.Size(200, 25)
+        $textBoxUsername.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
+        $textBoxUsername.BackColor = [System.Drawing.Color]::White 
         $textBoxUsername.ForeColor = [System.Drawing.Color]::Black
+        $textBoxUsername.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D  # Grauer 3D-Standard-Rahmen
+        #$textBoxUsername.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+        $textBoxUsername.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2) # Fix text visibility
+        $textBoxUsername.MaxLength = 21
         $form.Controls.Add($textBoxUsername)
         $labelPassword = New-Object System.Windows.Forms.Label
         $labelPassword.Text = "Password:"
-        $labelPassword.Location = New-Object System.Drawing.Point(20, 75)
-        $labelPassword.Size = New-Object System.Drawing.Size(100, 25)
-        $labelPassword.ForeColor = [System.Drawing.Color]::DarkBlue
+        $labelPassword.BackColor = [System.Drawing.Color]::Transparent
+        $labelPassword.Location = New-Object System.Drawing.Point(20, 110)
+        $labelPassword.Size = New-Object System.Drawing.Size(130, 30)
+        $labelPassword.ForeColor = [System.Drawing.Color]::WhiteSmoke
+        $labelPassword.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
         $form.Controls.Add($labelPassword)
         $textBoxPassword = New-Object System.Windows.Forms.TextBox
-        $textBoxPassword.Location = New-Object System.Drawing.Point(120, 75)
-        $textBoxPassword.Size = New-Object System.Drawing.Size(260, 35)
-        $textBoxPassword.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
+        $textBoxPassword.Location = New-Object System.Drawing.Point(160, 110)
+        $textBoxPassword.Size = New-Object System.Drawing.Size(200, 25)
+        $textBoxPassword.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
         $textBoxPassword.UseSystemPasswordChar = $true
-        $textBoxPassword.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxPassword.BackColor = [System.Drawing.Color]::White 
         $textBoxPassword.ForeColor = [System.Drawing.Color]::Black
+        $textBoxPassword.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
+        $textBoxPassword.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2) # Fix text visibility
+        $textBoxPassword.MaxLength = 50
         $form.Controls.Add($textBoxPassword)
+        $buttonShowPassword = New-Object System.Windows.Forms.Button
+        $buttonShowPassword.Text = "show"
+        $buttonShowPassword.Location = New-Object System.Drawing.Point(360, 110)
+        $buttonShowPassword.Size = New-Object System.Drawing.Size(50, 20)
+        $buttonShowPassword.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+        $buttonShowPassword.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183)
+        $buttonShowPassword.ForeColor = [System.Drawing.Color]::Black
+        $buttonShowPassword.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+        $buttonShowPassword.FlatAppearance.BorderSize = 0
+        $form.Controls.Add($buttonShowPassword)
+        $buttonShowPassword.Add_Click({
+                if ($textBoxPassword.UseSystemPasswordChar) {
+                    $textBoxPassword.UseSystemPasswordChar = $false
+                    $buttonShowPassword.Text = "hide"
+                }
+                else {
+                    $textBoxPassword.UseSystemPasswordChar = $true
+                    $buttonShowPassword.Text = "show"
+                }
+            })
         $labelDescription = New-Object System.Windows.Forms.Label
         $labelDescription.Text = "Description:"
-        $labelDescription.Location = New-Object System.Drawing.Point(20, 120)
-        $labelDescription.Size = New-Object System.Drawing.Size(100, 25)
-        $labelDescription.ForeColor = [System.Drawing.Color]::DarkBlue
+        $labelDescription.BackColor = [System.Drawing.Color]::Transparent
+        $labelDescription.Location = New-Object System.Drawing.Point(20, 170)
+        $labelDescription.Size = New-Object System.Drawing.Size(130, 30)
+        $labelDescription.ForeColor = [System.Drawing.Color]::WhiteSmoke
+        $labelDescription.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
         $form.Controls.Add($labelDescription)
         $textBoxDescription = New-Object System.Windows.Forms.TextBox
-        $textBoxDescription.Location = New-Object System.Drawing.Point(120, 120)
-        $textBoxDescription.Size = New-Object System.Drawing.Size(260, 35)
-        $textBoxDescription.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Left
-        $textBoxDescription.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        $textBoxDescription.Location = New-Object System.Drawing.Point(160, 170)
+        $textBoxDescription.Size = New-Object System.Drawing.Size(200, 25)
+        $textBoxDescription.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
+        $textBoxDescription.BackColor = [System.Drawing.Color]::White
         $textBoxDescription.ForeColor = [System.Drawing.Color]::Black
+        $textBoxDescription.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
+        $textBoxDescription.Padding = New-Object System.Windows.Forms.Padding(0, 2, 2, 2) # Rechter Padding auf 2 reduziert
+        #$textBoxDescription.Padding = New-Object System.Windows.Forms.Padding(0, 2, 5, 2) # Linker Padding auf 0 für Textverschiebung nach rechts
+        $textBoxDescription.MaxLength = 21
         $form.Controls.Add($textBoxDescription)
+        $labelUsername = New-Object System.Windows.Forms.Label
+        $labelUsername.Text = "Username:"
+        $labelUsername.BackColor = [System.Drawing.Color]::Transparent
+        $labelUsername.Location = New-Object System.Drawing.Point(20, 50)
+        $labelUsername.Size = New-Object System.Drawing.Size(130, 30)
+        $labelUsername.ForeColor = [System.Drawing.Color]::WhiteSmoke
+        $labelUsername.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
+        $form.Controls.Add($labelUsername)
+        #$textBoxFREE = New-Object System.Windows.Forms.TextBox
+        #$textBoxFREE.Location = New-Object System.Drawing.Point(140, 50)
+        #$textBoxFREE.Size = New-Object System.Drawing.Size(250, 45)
+        #$textBoxFREE.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
+        #$textBoxFREE.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
+        #$textBoxFREE.ForeColor = [System.Drawing.Color]::Black
+        #$textBoxFREE.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+        #$textBoxFREE.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2) # Fix text visibility
+        #$form.Controls.Add($textBoxFREE)
         $checkBoxAdmin = New-Object System.Windows.Forms.CheckBox
         $checkBoxAdmin.Text = "Admin"
-        $checkBoxAdmin.Location = New-Object System.Drawing.Point(120, 165)
-        $checkBoxAdmin.Size = New-Object System.Drawing.Size(120, 30)
-        $checkBoxAdmin.ForeColor = [System.Drawing.Color]::DarkBlue
+        $checkBoxAdmin.BackColor = [System.Drawing.Color]::Transparent
+        $checkBoxAdmin.Location = New-Object System.Drawing.Point(140, 230)
+        $checkBoxAdmin.Size = New-Object System.Drawing.Size(170, 40)
+        $checkBoxAdmin.ForeColor = [System.Drawing.Color]::WhiteSmoke
+        $checkBoxAdmin.Font = New-Object System.Drawing.Font("Segoe UI", 12)
         $form.Controls.Add($checkBoxAdmin)
         $buttonOK = New-Object System.Windows.Forms.Button
         $buttonOK.Text = "OK"
-        $buttonOK.Location = New-Object System.Drawing.Point(120, 205)
-        $buttonOK.Size = New-Object System.Drawing.Size(110, 45)
-        $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 128, 128) # Teal
-        $buttonOK.ForeColor = [System.Drawing.Color]::White
+        $buttonOK.Location = New-Object System.Drawing.Point(140, 290)
+        $buttonOK.Size = New-Object System.Drawing.Size(100, 35)
+        $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183) # ZF Blau
+        $buttonOK.ForeColor = [System.Drawing.Color]::White # Changed to White for contrast
         $buttonOK.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
         $buttonOK.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
+        $buttonOK.FlatAppearance.BorderSize = 0
+        $buttonOK.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(30, 107, 203) # Lighter ZF Blau
         $form.Controls.Add($buttonOK)
-        # Add hover effect for OK button
-        $buttonOK.Add_MouseEnter({ $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 150) })
-        $buttonOK.Add_MouseLeave({ $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 128, 128) })
+        # Enhanced hover effect with scale
+        $buttonOK.Add_MouseEnter({
+                $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(30, 107, 203)
+                $buttonOK.Padding = New-Object System.Windows.Forms.Padding(3)
+            })
+        $buttonOK.Add_MouseLeave({
+                $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183)
+                $buttonOK.Padding = New-Object System.Windows.Forms.Padding(0)
+            })
         $buttonCancel = New-Object System.Windows.Forms.Button
         $buttonCancel.Text = "Cancel"
-        $buttonCancel.Location = New-Object System.Drawing.Point(240, 205)
-        $buttonCancel.Size = New-Object System.Drawing.Size(110, 45)
+        $buttonCancel.Location = New-Object System.Drawing.Point(280, 290)
+        $buttonCancel.Size = New-Object System.Drawing.Size(100, 35)# Größe Button verändern
         $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105) # DimGray
         $buttonCancel.ForeColor = [System.Drawing.Color]::White
         $buttonCancel.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
         $buttonCancel.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
+        $buttonCancel.FlatAppearance.BorderSize = 0
+        $buttonCancel.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(125, 125, 125)
         $form.Controls.Add($buttonCancel)
-        # Add hover effect for Cancel button
-        $buttonCancel.Add_MouseEnter({ $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(125, 125, 125) })
-        $buttonCancel.Add_MouseLeave({ $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105) })
+        # Enhanced hover effect with scale
+        $buttonCancel.Add_MouseEnter({
+                $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(125, 125, 125)
+                $buttonCancel.Padding = New-Object System.Windows.Forms.Padding(3)
+            })
+        $buttonCancel.Add_MouseLeave({
+                $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105)
+                $buttonCancel.Padding = New-Object System.Windows.Forms.Padding(0)
+            })
         $buttonOK.Add_Click({
                 if ($textBoxUsername.Text -eq "" -or $textBoxPassword.Text -eq "") {
                     [System.Windows.Forms.MessageBox]::Show("Enter username and password!", "Error")
