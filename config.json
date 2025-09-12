@@ -43,7 +43,7 @@
       "LogFile": "$PSScriptRoot\\log_chrome_{timestamp}.txt"
     },
     {
-      "Source": "\\\\emea.zf-world.com\\sCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Etas\\Inca\\INCA_v7.5",
+      "Source": "\\\\emea.zf-world.com\\SCW\\IndustrialNet\\OG-EAntriebe-ENTW\\4000-Versuch\\02_IPC_Main_Share\\01_Tools_Drivers\\Etas\\Inca\\INCA_v7.5",
       "Target": "{root}\\02_Tools\\",
       "LogFile": "$PSScriptRoot\\log_inca_{timestamp}.txt"
     },
