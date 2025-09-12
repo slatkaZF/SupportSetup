@@ -34,6 +34,8 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Write-Err "Please run this script with administrative privileges."
     exit 1
 }
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction SilentlyContinue
 # ===================== Load configuration =====================
 if (-not (Test-Path $ConfigPath)) {
     Write-Err "Configuration file not found: $ConfigPath"
@@ -86,7 +88,7 @@ function New-UserWithGUI {
         $form.StartPosition = "WindowsDefaultLocation"
         $form.Font = New-Object System.Drawing.Font("Segoe UI", 11)
         $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
-        $form.Icon = New-Object System.Drawing.Icon("C:\supportSetup\zf.ico")
+        $form.Icon = New-Object System.Drawing.Icon((Join-Path $PSScriptRoot "zf.ico"))
         $form.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183) # ZF Blau as fallback
         # Smooth gradient background
         $form.Add_Paint({
@@ -325,30 +327,49 @@ if ($cfg.jobs) {
     $totalJobs = $cfg.jobs.Count # Gesamtzahl der Jobs
     $currentJob = 0 # Zähler für aktuelle Jobs
     foreach ($job in $cfg.jobs) {
-        # Fortschrittsberechnung
         $currentJob++
         $percentComplete = ($currentJob / $totalJobs) * 100
-        # Progressbalken anzeigen
         Write-Progress -Activity "Dateien werden kopiert" -Status "Verarbeite Job $currentJob von $totalJobs" -PercentComplete $percentComplete
-        $source = $job.Source.Replace("{root}", $root)
-        $destination = $job.Target.Replace("{root}", $root)
-        $splitArray = $source.Split("\")
-        $fileName = $splitArray[-1]
-        $destinationFile = Join-Path $destination $fileName # Korrekter Pfad für die Zieldatei
-        # Prüfen, ob Quelldatei und Zielverzeichnis existieren
-        $destinationDir = Split-Path $destinationFile -Parent
+        
+        # Robustes Replace: Case-insensitive und Trim für Leerzeichen
+        $source = $job.Source.Trim() -ireplace '\{root\}', $root
+        $destination = $job.Target.Trim() -ireplace '\{root\}', $root
+        
+        # FileName extrahieren (robuster)
+        $fileName = [System.IO.Path]::GetFileName($source)
+        
+        # DestinationFile bauen
+        $destinationFile = Join-Path $destination $fileName
+        
+        # DestinationDir extrahieren
+        $destinationDir = [System.IO.Path]::GetDirectoryName($destinationFile)
+        
+        # Prüfen, ob Quelle existiert
         if (-not (Test-Path $source)) {
             Write-Err "Source file does not exist: $source"
             continue
         }
-        if (-not (Test-Path $destinationDir)) {
+        
+        # Fix für leere DestinationDir (der Hauptgrund für deinen Error)
+        if ([string]::IsNullOrEmpty($destinationDir)) {
+            Write-Warn "DestinationDir ist leer! Fallback zu $destination als Zielordner."
+            $destinationDir = $destination  # Fallback auf den vollen Destination-Pfad
+        }
+        
+        # Nun prüfen, ob Zielordner existiert (ErrorAction SilentlyContinue verhindert weitere Exceptions)
+        if (-not (Test-Path $destinationDir -ErrorAction SilentlyContinue)) {
             Write-Err "Destination directory does not exist: $destinationDir"
             continue
         }
+        
         Write-Info "Kopiere $fileName nach $destination"
         try {
-            Copy-Item -Path $source -Destination $destination -Force -ErrorAction Stop
+            # Automatisches Recurse für Ordner
+            $copyParams = @{ Path = $source; Destination = $destination; Force = $true; ErrorAction = 'Stop' }
+            if (Test-Path $source -PathType Container) { $copyParams['Recurse'] = $true }
+            Copy-Item @copyParams
             Write-Info "Erfolg: $fileName kopiert."
+            
             try {
                 Unblock-File -Path $destinationFile -ErrorAction Stop
                 Write-Info "Datei entsperrt: $destinationFile"
@@ -360,10 +381,9 @@ if ($cfg.jobs) {
         catch {
             Write-Err "Failed to copy file $fileName - $_"
         }
-        # Optional: Kleine Pause für sichtbaren Fortschritt (entfernen in Produktion, wenn nicht nötig)
+        
         Start-Sleep -Milliseconds 100
     }
-    # Progressbalken endgültig schließen
     Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
 }
 # ===================== Cleanup =====================
