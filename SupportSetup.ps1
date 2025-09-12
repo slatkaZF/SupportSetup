@@ -4,15 +4,12 @@ $scriptPath = $PSCommandPath
 if (Test-Path $scriptPath) {
     Unblock-File -Path $scriptPath -ErrorAction SilentlyContinue
 }
-
 # ===================== Simple logging functions =====================
 function Write-Info { Write-Host "[INFO] $args" }
 function Write-Warn { Write-Host "[WARN] $args" -ForegroundColor Yellow }
 function Write-Err { Write-Host "[ERROR] $args" -ForegroundColor Red }
-
 # ===================== Path to configuration file =====================
 $ConfigPath = Join-Path $PSScriptRoot "config.json"
-# ... (Rest des Skripts folgt)
 # ===================== Function to get localized group names =====================
 function Get-LocalGroupName {
     param ([string]$GroupType)
@@ -34,7 +31,6 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Write-Err "Please run this script with administrative privileges."
     exit 1
 }
-
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction SilentlyContinue
 # ===================== Load configuration =====================
 if (-not (Test-Path $ConfigPath)) {
@@ -57,11 +53,10 @@ function Create-LocalUserAccount {
     param (
         [string]$Username,
         [SecureString]$Password,
-        [string]$Description,
         [bool]$IsAdmin = $false
     )
     try {
-        New-LocalUser -Name $Username -Password $Password -Description $Description -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
+        New-LocalUser -Name $Username -Password $Password -UserMayNotChangePassword -PasswordNeverExpires -AccountNeverExpires -ErrorAction Stop
         Write-Info "User $Username successfully created"
         Add-LocalGroupMember -Group $UsersGroup -Member $Username -ErrorAction Stop
         Write-Info "User $Username added to $UsersGroup"
@@ -75,7 +70,6 @@ function Create-LocalUserAccount {
         throw
     }
 }
-
 # ===================== Function to create user with GUI =====================
 function New-UserWithGUI {
     param ([PSCustomObject]$Config)
@@ -92,36 +86,27 @@ function New-UserWithGUI {
         $form.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183) # ZF Blau as fallback
         # Smooth gradient background
         $form.Add_Paint({
-                $rect = $form.ClientRectangle
-                $gradientBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-                    $rect,
-                    [System.Drawing.Color]::FromArgb(0, 87, 183), # ZF Blau
-                    [System.Drawing.Color]::FromArgb(0, 15, 50),  # Softer ZF Schwarzblau
-                    90 # Vertical gradient
-                )
-                $_.Graphics.FillRectangle($gradientBrush, $rect)
-                $gradientBrush.Dispose()
-            })
+            $rect = $form.ClientRectangle
+            $gradientBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+                $rect,
+                [System.Drawing.Color]::FromArgb(0, 87, 183), # ZF Blau
+                [System.Drawing.Color]::FromArgb(0, 15, 50), # Softer ZF Schwarzblau
+                90 # Vertical gradient
+            )
+            $_.Graphics.FillRectangle($gradientBrush, $rect)
+            $gradientBrush.Dispose()
+        })
         # Smooth fade-in effect
         $form.Opacity = 0
         $form.Add_Shown({
-                $opacity = 0
-                while ($opacity -lt 1) {
-                    $form.Opacity = $opacity
-                    $opacity += 0.05
-                    Start-Sleep -Milliseconds 50
-                }
-                $form.Opacity = 1
-            })
-        #$labelTitle = New-Object System.Windows.Forms.Label
-        #$labelTitle.Text = "Create User"
-        #$labelTitle.BackColor = [System.Drawing.Color]::Transparent
-        #$labelTitle.Location = New-Object System.Drawing.Point(37, 10)
-        #$labelTitle.Size = New-Object System.Drawing.Size(440, 30)
-        #$labelTitle.ForeColor = [System.Drawing.Color]::FromArgb(0, 15, 50)
-        #$labelTitle.Font = New-Object System.Drawing.Font("Segoe UI", 16, [System.Drawing.FontStyle]::Bold)
-        #$labelTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-        #$form.Controls.Add($labelTitle)
+            $opacity = 0
+            while ($opacity -lt 1) {
+                $form.Opacity = $opacity
+                $opacity += 0.05
+                Start-Sleep -Milliseconds 50
+            }
+            $form.Opacity = 1
+        })
         $labelUsername = New-Object System.Windows.Forms.Label
         $labelUsername.Text = "Username:"
         $labelUsername.BackColor = [System.Drawing.Color]::Transparent
@@ -134,11 +119,10 @@ function New-UserWithGUI {
         $textBoxUsername.Location = New-Object System.Drawing.Point(160, 50)
         $textBoxUsername.Size = New-Object System.Drawing.Size(200, 25)
         $textBoxUsername.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
-        $textBoxUsername.BackColor = [System.Drawing.Color]::White 
+        $textBoxUsername.BackColor = [System.Drawing.Color]::White
         $textBoxUsername.ForeColor = [System.Drawing.Color]::Black
-        $textBoxUsername.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D  # Grauer 3D-Standard-Rahmen
-        #$textBoxUsername.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-        $textBoxUsername.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2) # Fix text visibility
+        $textBoxUsername.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
+        $textBoxUsername.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2)
         $textBoxUsername.MaxLength = 21
         $form.Controls.Add($textBoxUsername)
         $labelPassword = New-Object System.Windows.Forms.Label
@@ -154,10 +138,10 @@ function New-UserWithGUI {
         $textBoxPassword.Size = New-Object System.Drawing.Size(200, 25)
         $textBoxPassword.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
         $textBoxPassword.UseSystemPasswordChar = $true
-        $textBoxPassword.BackColor = [System.Drawing.Color]::White 
+        $textBoxPassword.BackColor = [System.Drawing.Color]::White
         $textBoxPassword.ForeColor = [System.Drawing.Color]::Black
         $textBoxPassword.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
-        $textBoxPassword.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2) # Fix text visibility
+        $textBoxPassword.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2)
         $textBoxPassword.MaxLength = 50
         $form.Controls.Add($textBoxPassword)
         $buttonShowPassword = New-Object System.Windows.Forms.Button
@@ -171,51 +155,33 @@ function New-UserWithGUI {
         $buttonShowPassword.FlatAppearance.BorderSize = 0
         $form.Controls.Add($buttonShowPassword)
         $buttonShowPassword.Add_Click({
-                if ($textBoxPassword.UseSystemPasswordChar) {
-                    $textBoxPassword.UseSystemPasswordChar = $false
-                    $buttonShowPassword.Text = "hide"
-                }
-                else {
-                    $textBoxPassword.UseSystemPasswordChar = $true
-                    $buttonShowPassword.Text = "show"
-                }
-            })
-        $labelDescription = New-Object System.Windows.Forms.Label
-        $labelDescription.Text = "Description:"
-        $labelDescription.BackColor = [System.Drawing.Color]::Transparent
-        $labelDescription.Location = New-Object System.Drawing.Point(20, 170)
-        $labelDescription.Size = New-Object System.Drawing.Size(130, 30)
-        $labelDescription.ForeColor = [System.Drawing.Color]::WhiteSmoke
-        $labelDescription.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
-        $form.Controls.Add($labelDescription)
-        $textBoxDescription = New-Object System.Windows.Forms.TextBox
-        $textBoxDescription.Location = New-Object System.Drawing.Point(160, 170)
-        $textBoxDescription.Size = New-Object System.Drawing.Size(200, 25)
-        $textBoxDescription.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
-        $textBoxDescription.BackColor = [System.Drawing.Color]::White
-        $textBoxDescription.ForeColor = [System.Drawing.Color]::Black
-        $textBoxDescription.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
-        $textBoxDescription.Padding = New-Object System.Windows.Forms.Padding(0, 2, 2, 2) # Rechter Padding auf 2 reduziert
-        #$textBoxDescription.Padding = New-Object System.Windows.Forms.Padding(0, 2, 5, 2) # Linker Padding auf 0 für Textverschiebung nach rechts
-        $textBoxDescription.MaxLength = 21
-        $form.Controls.Add($textBoxDescription)
-        $labelUsername = New-Object System.Windows.Forms.Label
-        $labelUsername.Text = "Username:"
-        $labelUsername.BackColor = [System.Drawing.Color]::Transparent
-        $labelUsername.Location = New-Object System.Drawing.Point(20, 50)
-        $labelUsername.Size = New-Object System.Drawing.Size(130, 30)
-        $labelUsername.ForeColor = [System.Drawing.Color]::WhiteSmoke
-        $labelUsername.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
-        $form.Controls.Add($labelUsername)
-        #$textBoxFREE = New-Object System.Windows.Forms.TextBox
-        #$textBoxFREE.Location = New-Object System.Drawing.Point(140, 50)
-        #$textBoxFREE.Size = New-Object System.Drawing.Size(250, 45)
-        #$textBoxFREE.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
-        #$textBoxFREE.BackColor = [System.Drawing.Color]::FromArgb(0, 171, 231) # ZF Cyan
-        #$textBoxFREE.ForeColor = [System.Drawing.Color]::Black
-        #$textBoxFREE.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-        #$textBoxFREE.Padding = New-Object System.Windows.Forms.Padding(5, 2, 5, 2) # Fix text visibility
-        #$form.Controls.Add($textBoxFREE)
+            if ($textBoxPassword.UseSystemPasswordChar) {
+                $textBoxPassword.UseSystemPasswordChar = $false
+                $buttonShowPassword.Text = "hide"
+            }
+            else {
+                $textBoxPassword.UseSystemPasswordChar = $true
+                $buttonShowPassword.Text = "show"
+            }
+        })
+        $labelLocation = New-Object System.Windows.Forms.Label
+        $labelLocation.Text = "Location:"
+        $labelLocation.BackColor = [System.Drawing.Color]::Transparent
+        $labelLocation.Location = New-Object System.Drawing.Point(20, 170)
+        $labelLocation.Size = New-Object System.Drawing.Size(130, 30)
+        $labelLocation.ForeColor = [System.Drawing.Color]::WhiteSmoke
+        $labelLocation.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
+        $form.Controls.Add($labelLocation)
+        $textBoxLocation = New-Object System.Windows.Forms.TextBox
+        $textBoxLocation.Location = New-Object System.Drawing.Point(160, 170)
+        $textBoxLocation.Size = New-Object System.Drawing.Size(200, 25)
+        $textBoxLocation.TextAlign = [System.Windows.Forms.HorizontalAlignment]::Center
+        $textBoxLocation.BackColor = [System.Drawing.Color]::White
+        $textBoxLocation.ForeColor = [System.Drawing.Color]::Black
+        $textBoxLocation.BorderStyle = [System.Windows.Forms.BorderStyle]::Fixed3D
+        $textBoxLocation.Padding = New-Object System.Windows.Forms.Padding(0, 2, 2, 2)
+        $textBoxLocation.MaxLength = 21
+        $form.Controls.Add($textBoxLocation)
         $checkBoxAdmin = New-Object System.Windows.Forms.CheckBox
         $checkBoxAdmin.Text = "Admin"
         $checkBoxAdmin.BackColor = [System.Drawing.Color]::Transparent
@@ -228,63 +194,122 @@ function New-UserWithGUI {
         $buttonOK.Text = "OK"
         $buttonOK.Location = New-Object System.Drawing.Point(140, 290)
         $buttonOK.Size = New-Object System.Drawing.Size(100, 35)
-        $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183) # ZF Blau
-        $buttonOK.ForeColor = [System.Drawing.Color]::White # Changed to White for contrast
+        $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183)
+        $buttonOK.ForeColor = [System.Drawing.Color]::White
         $buttonOK.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
         $buttonOK.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
         $buttonOK.FlatAppearance.BorderSize = 0
-        $buttonOK.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(30, 107, 203) # Lighter ZF Blau
+        $buttonOK.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(30, 107, 203)
         $form.Controls.Add($buttonOK)
-        # Enhanced hover effect with scale
         $buttonOK.Add_MouseEnter({
-                $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(30, 107, 203)
-                $buttonOK.Padding = New-Object System.Windows.Forms.Padding(3)
-            })
+            $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(30, 107, 203)
+            $buttonOK.Padding = New-Object System.Windows.Forms.Padding(3)
+        })
         $buttonOK.Add_MouseLeave({
-                $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183)
-                $buttonOK.Padding = New-Object System.Windows.Forms.Padding(0)
-            })
+            $buttonOK.BackColor = [System.Drawing.Color]::FromArgb(0, 87, 183)
+            $buttonOK.Padding = New-Object System.Windows.Forms.Padding(0)
+        })
         $buttonCancel = New-Object System.Windows.Forms.Button
         $buttonCancel.Text = "Cancel"
         $buttonCancel.Location = New-Object System.Drawing.Point(280, 290)
-        $buttonCancel.Size = New-Object System.Drawing.Size(100, 35)# Größe Button verändern
-        $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105) # DimGray
+        $buttonCancel.Size = New-Object System.Drawing.Size(100, 35)
+        $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105)
         $buttonCancel.ForeColor = [System.Drawing.Color]::White
         $buttonCancel.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
         $buttonCancel.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
         $buttonCancel.FlatAppearance.BorderSize = 0
         $buttonCancel.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(125, 125, 125)
         $form.Controls.Add($buttonCancel)
-        # Enhanced hover effect with scale
         $buttonCancel.Add_MouseEnter({
-                $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(125, 125, 125)
-                $buttonCancel.Padding = New-Object System.Windows.Forms.Padding(3)
-            })
+            $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(125, 125, 125)
+            $buttonCancel.Padding = New-Object System.Windows.Forms.Padding(3)
+        })
         $buttonCancel.Add_MouseLeave({
-                $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105)
-                $buttonCancel.Padding = New-Object System.Windows.Forms.Padding(0)
-            })
+            $buttonCancel.BackColor = [System.Drawing.Color]::FromArgb(105, 105, 105)
+            $buttonCancel.Padding = New-Object System.Windows.Forms.Padding(0)
+        })
         $buttonOK.Add_Click({
-                if ($textBoxUsername.Text -eq "" -or $textBoxPassword.Text -eq "") {
-                    [System.Windows.Forms.MessageBox]::Show("Enter username and password!", "Error")
+            if ($textBoxUsername.Text -eq "" -or $textBoxPassword.Text -eq "") {
+                [System.Windows.Forms.MessageBox]::Show("Enter username and password!", "Error")
+            }
+            else {
+                try {
+                    $password = ConvertTo-SecureString $textBoxPassword.Text -AsPlainText -Force
+                    Create-LocalUserAccount -Username $textBoxUsername.Text -Password $password -IsAdmin $checkBoxAdmin.Checked
+                    # === KONFIGURATION ===
+                    $Username = $textBoxUsername.Text
+                    $Password = $textBoxPassword.Text
+                    $Domain = "."
+                    # === REGISTRY-PFAD ===
+                    $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+                    # === EINTRÄGE SETZEN ===
+                    Set-ItemProperty -Path $RegPath -Name "AutoAdminLogon" -Value "1" -Type String
+                    Set-ItemProperty -Path $RegPath -Name "DefaultUsername" -Value $Username -Type String
+                    Set-ItemProperty -Path $RegPath -Name "DefaultPassword" -Value $Password -Type String
+                    Set-ItemProperty -Path $RegPath -Name "DefaultDomainName" -Value $Domain -Type String
+                    Write-Host "Automatische Anmeldung für Benutzer '$Username' wurde eingerichtet."
+                    Set-SnmpSettings -location $textBoxLocation.Text
+                    $form.Close()
                 }
-                else {
-                    try {
-                        $password = ConvertTo-SecureString $textBoxPassword.Text -AsPlainText -Force
-                        Create-LocalUserAccount -Username $textBoxUsername.Text -Password $password -Description $textBoxDescription.Text -IsAdmin $checkBoxAdmin.Checked
-                        $form.Close()
-                    }
-                    catch {
-                        [System.Windows.Forms.MessageBox]::Show("Failed to create user: $_", "Error")
-                    }
+                catch {
+                    [System.Windows.Forms.MessageBox]::Show("Failed to create user: $_", "Error")
                 }
-            })
+            }
+        })
         $buttonCancel.Add_Click({ $form.Close() })
         $form.ShowDialog() | Out-Null
     } while ([System.Windows.Forms.MessageBox]::Show("Create another user?", "Question", [System.Windows.Forms.MessageBoxButtons]::YesNo) -eq "Yes")
 }
+# ===================== Function to unblock files =====================
+function Unblock-Files {
+    param ([string]$Path)
+    Get-ChildItem -Path $Path -Recurse -File -ErrorAction SilentlyContinue | Unblock-File
+}
+# ===================== Function to set SNMP settings =====================
+function Set-SnmpSettings {
+    param (
+        [string]$location
+    )
+    #variables
+    $mails_snmp = @("andreas.fuerst@zf.com")
+    $communitystr = "public"
+    $OMaddress = "SCWV0005"
+
+    #Check If SNMP Services are already installed
+    $check = Get-WindowsOptionalFeature -Online | Where-Object { $_.FeatureName -eq "SNMP" }
+    if ($check.State -ne "Enabled") {
+        #Install/Enable SNMP Services
+        Write-Host "SNMP not installed - trying to install SNMP..."
+        try {
+            Enable-WindowsOptionalFeature -Online -FeatureName "SNMP"
+        }
+        catch {
+            Add-WindowsCapability -Online -Name "SNMP.Client~~~~0.0.1.0"
+        }
+    }
+
+    #Select all agent services for SNMP
+    $path = 'HKLM:\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\RFC1156Agent\' 
+    Set-ItemProperty -Path $path -Name "sysServices" -Value 79
+
+    #Set agent contact
+    $path = 'HKLM:\SYSTEM\CurrentControlSet\services\SNMP\Parameters\RFC1156Agent'
+    Set-ItemProperty -Path $path -Name "sysContact" -Value $mails_snmp
+
+    #Set agent location
+    $path = 'HKLM:\SYSTEM\CurrentControlSet\services\SNMP\Parameters\RFC1156Agent'
+    Set-ItemProperty -Path $path -Name "sysLocation" -Value $location
+
+    #Set to accept packets from IP-Address of OM
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers' -Name "2" -Value $OMaddress
+
+    #Set public key
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities' -Name $communitystr -Value 4
+
+    #Restart SNMP
+    Restart-Service -Name SNMP
+}
 # ===================== Create users =====================
-# Support user always created
 $registryPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System"
 $registryName = "LocalAccountTokenFilterPolicy"
 $registryValue = 1
@@ -297,7 +322,7 @@ catch {
 }
 try {
     $password = ConvertTo-SecureString 'Adm_Supp0rt' -AsPlainText -Force
-    Create-LocalUserAccount -Username 'Support' -Password $password -Description 'Support User for administration' -IsAdmin $true
+    Create-LocalUserAccount -Username 'Support' -Password $password -IsAdmin $true
 }
 catch {
     Write-Err "Failed to create Support user - $_"
@@ -324,70 +349,53 @@ if ($cfg.features.createFolders -and $cfg.folderProvisioning.projectDirectories)
 }
 # ===================== Dateien kopieren und entsperren =====================
 if ($cfg.jobs) {
-    $totalJobs = $cfg.jobs.Count # Gesamtzahl der Jobs
-    $currentJob = 0 # Zähler für aktuelle Jobs
+    $totalJobs = $cfg.jobs.Count  # Gesamtzahl der Jobs
+    $currentJob = 0  # Zähler für aktuelle Jobs
+
     foreach ($job in $cfg.jobs) {
+        # Fortschrittsberechnung
         $currentJob++
         $percentComplete = ($currentJob / $totalJobs) * 100
+
+        # Progressbalken anzeigen
         Write-Progress -Activity "Dateien werden kopiert" -Status "Verarbeite Job $currentJob von $totalJobs" -PercentComplete $percentComplete
-        
-        # Robustes Replace: Case-insensitive und Trim für Leerzeichen
-        $source = $job.Source.Trim() -ireplace '\{root\}', $root
-        $destination = $job.Target.Trim() -ireplace '\{root\}', $root
-        
-        # FileName extrahieren (robuster)
-        $fileName = [System.IO.Path]::GetFileName($source)
-        
-        # DestinationFile bauen
-        $destinationFile = Join-Path $destination $fileName
-        
-        # DestinationDir extrahieren
-        $destinationDir = [System.IO.Path]::GetDirectoryName($destinationFile)
-        
-        # Prüfen, ob Quelle existiert
-        if (-not (Test-Path $source)) {
-            Write-Err "Source file does not exist: $source"
-            continue
-        }
-        
-        # Fix für leere DestinationDir (der Hauptgrund für deinen Error)
-        if ([string]::IsNullOrEmpty($destinationDir)) {
-            Write-Warn "DestinationDir ist leer! Fallback zu $destination als Zielordner."
-            $destinationDir = $destination  # Fallback auf den vollen Destination-Pfad
-        }
-        
-        # Nun prüfen, ob Zielordner existiert (ErrorAction SilentlyContinue verhindert weitere Exceptions)
-        if (-not (Test-Path $destinationDir -ErrorAction SilentlyContinue)) {
-            Write-Err "Destination directory does not exist: $destinationDir"
-            continue
-        }
-        
+
+        $source = $job.Source.Replace("{root}", $root)
+        $destination = $job.Target.Replace("{root}", $root)
+        $splitArray = $source.Split("\")
+        $fileName = $splitArray[-1]
+        $destinationFile = Join-Path $destination $fileName  # Korrekter Pfad für die Zieldatei
+
         Write-Info "Kopiere $fileName nach $destination"
         try {
-            # Automatisches Recurse für Ordner
-            $copyParams = @{ Path = $source; Destination = $destination; Force = $true; ErrorAction = 'Stop' }
-            if (Test-Path $source -PathType Container) { $copyParams['Recurse'] = $true }
-            Copy-Item @copyParams
+            Copy-Item -Path $source -Destination $destination -Force -ErrorAction Stop
             Write-Info "Erfolg: $fileName kopiert."
-            
-            try {
-                Unblock-File -Path $destinationFile -ErrorAction Stop
-                Write-Info "Datei entsperrt: $destinationFile"
-            }
-            catch {
-                Write-Err "Failed to unblock file $destinationFile - $_"
-            }
+        } catch {
+            Write-Err "Fehler beim Kopieren von $fileName : $_"
         }
-        catch {
-            Write-Err "Failed to copy file $fileName - $_"
+
+        # Datei entsperren
+        try {
+            Unblock-File -Path $destinationFile -ErrorAction Stop
+            Write-Info "Datei entsperrt: $destinationFile"
+        } catch {
+            Write-Err "Fehler beim Entsperren von $destinationFile : $_"
         }
-        
-        Start-Sleep -Milliseconds 100
+
+        # Optional: Kleine Pause für sichtbaren Fortschritt (entfernen in Produktion, wenn nicht nötig)
+        #Start-Sleep -Milliseconds 100
     }
+
+    # Progressbalken schließen
     Write-Progress -Activity "Dateien werden kopiert" -Status "Abgeschlossen" -Completed
+    # Windows 10 Eigenschaftsfenster 
+    reg.exe add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve
 }
 # ===================== Cleanup =====================
 if ($cfg.features.enableTranscriptLogging) {
     Stop-Transcript | Out-Null
 }
 Write-Info "Skript abgeschlossen."
+
+#NEUSTART
+shutdown /r /t 5
